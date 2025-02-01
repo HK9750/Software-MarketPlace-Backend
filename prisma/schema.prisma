@@ -4,11 +4,293 @@
 // Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
-generator client {
-  provider = "prisma-client-js"
-}
-
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum UserRole {
+  CUSTOMER
+  SELLER
+  ADMIN
+}
+
+enum OrderStatus {
+  PENDING
+  COMPLETED
+  CANCELLED
+  REFUNDED
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELED
+  EXPIRED
+  PAUSED
+}
+
+enum NotificationType {
+  PRICE_DROP
+  CART_REMINDER
+  SUBSCRIPTION_RENEWAL
+  PAYMENT_FAILED
+}
+
+model User {
+  id              String           @id @default(uuid())
+  email           String           @unique
+  password        String
+  role            UserRole         @default(CUSTOMER)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  // Relationships
+  profile         Profile?
+  cart            Cart[]
+  wishlist        Wishlist[]
+  orders          Order[]
+  subscriptions   Subscription[]
+  payments        Payment[]
+  reviews         Review[]
+  notifications   Notification[]
+  licenses        LicenseKey[]
+  sellerProfile   SellerProfile?
+
+  UserOrderHistory UserOrderHistory[]
+}
+
+model Profile {
+  id          String   @id @default(uuid())
+  firstName   String
+  lastName    String
+  phone       String?
+  address     Json?
+  avatarUrl   String?
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id])
+}
+
+model SellerProfile {
+  id              String     @id @default(uuid())
+  verified        Boolean    @default(false)
+  userId          String     @unique
+  user            User       @relation(fields: [userId], references: [id])
+  softwareProducts Software[]
+}
+
+model Software {
+  id              String       @id @default(uuid())
+  name            String
+  description     String
+  price           Float
+  discount        Float
+  features        Json
+  requirements    Json
+  categoryId      String
+  sellerId        String
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  deletedAt       DateTime?
+  isApproved      Boolean      @default(false)
+
+  // Relationships
+  category        Category     @relation(fields: [categoryId], references: [id])
+  seller          SellerProfile @relation(fields: [sellerId], references: [id])
+  orders          OrderItem[]
+  reviews         Review[]
+  wishlist        Wishlist[]
+  cart            Cart[]
+  licenses        LicenseKey[]
+  priceHistory    PriceHistory[]
+  subscriptions   SubscriptionPlan[]
+
+  Notification Notification[]
+
+  Order Order[]
+}
+
+model Category {
+  id              String     @id @default(uuid())
+  name            String
+  parentId        String?
+  description     String?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  // Relationships
+  children        Category[] @relation("CategoryToCategory")
+  parent          Category?  @relation("CategoryToCategory", fields: [parentId], references: [id])
+  software        Software[]
+}
+
+model LicenseKey {
+  id              String     @id @default(uuid())
+  key             String     @unique
+  softwareId      String
+  userId          String
+  orderItemId     String
+  validUntil      DateTime
+  createdAt       DateTime   @default(now())
+  isExpired       Boolean    @default(false)
+
+  // Relationships
+  software        Software   @relation(fields: [softwareId], references: [id])
+  user            User       @relation(fields: [userId], references: [id])
+  orderItem       OrderItem  @relation(fields: [orderItemId], references: [id])
+}
+
+model Order {
+  id              String      @id @default(uuid())
+  userId          String
+  softwareId      String
+  totalAmount     Float
+  status          OrderStatus @default(PENDING)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  items           OrderItem[]
+  payment         Payment?
+  UserOrderHistory UserOrderHistory[]
+
+  // Relationships
+  user            User        @relation(fields: [userId], references: [id])
+  Software Software @relation(fields: [softwareId], references: [id])
+}
+
+model OrderItem {
+  id              String     @id @default(uuid())
+  orderId         String
+  softwareId      String
+  price           Float
+
+  // Relationships
+  order           Order      @relation(fields: [orderId], references: [id])
+  software        Software   @relation(fields: [softwareId], references: [id])
+
+  LicenseKey LicenseKey[]
+}
+
+model Cart {
+  id              String     @id @default(uuid())
+  userId          String
+  softwareId      String
+  quantity        Int        @default(1)
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  // Relationships
+  user            User       @relation(fields: [userId], references: [id])
+  software        Software   @relation(fields: [softwareId], references: [id])
+}
+
+model Wishlist {
+  id              String     @id @default(uuid())
+  userId          String
+  softwareId      String
+  createdAt       DateTime   @default(now())
+
+  // Relationships
+  user            User       @relation(fields: [userId], references: [id])
+  software        Software   @relation(fields: [softwareId], references: [id])
+}
+
+model SubscriptionPlan {
+  id              String       @id @default(uuid())
+  name            String
+  duration        Int          // In months
+  price           Float
+  softwareId      String
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  // Relationships
+  software        Software     @relation(fields: [softwareId], references: [id])
+  subscriptions   Subscription[]
+} 
+
+model Subscription {
+  id              String           @id @default(uuid())
+  userId          String
+  planId          String
+  startDate       DateTime
+  endDate         DateTime
+  status          SubscriptionStatus @default(ACTIVE)
+  autoRenew       Boolean          @default(true)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  // Relationships
+  user            User             @relation(fields: [userId], references: [id])
+  plan            SubscriptionPlan @relation(fields: [planId], references: [id])
+  payments        Payment[]
+}
+
+model Payment {
+  id              String     @id @default(uuid())
+  amount          Float
+  method          String     // PayPro-specific method
+  transactionId   String     @unique
+  status          String
+  userId          String
+  orderId         String? @unique
+  subscriptionId  String?
+  createdAt       DateTime   @default(now())
+
+  // Relationships
+  user            User       @relation(fields: [userId], references: [id])
+  order           Order?     @relation(fields: [orderId], references: [id])
+  subscription    Subscription? @relation(fields: [subscriptionId], references: [id])
+}
+
+model Review {
+  id              String     @id @default(uuid())
+  rating          Int
+  comment         String?
+  userId          String
+  softwareId      String
+  isApproved        Boolean    @default(false)
+  createdAt       DateTime   @default(now())
+
+  // Relationships
+  user            User       @relation(fields: [userId], references: [id])
+  software        Software   @relation(fields: [softwareId], references: [id])
+}
+
+model Notification {
+  id              String           @id @default(uuid())
+  type            NotificationType
+  userId          String
+  softwareId      String?
+  message         String
+  isRead            Boolean          @default(false)
+  createdAt       DateTime         @default(now())
+
+  // Relationships
+  user            User             @relation(fields: [userId], references: [id])
+  software        Software?        @relation(fields: [softwareId], references: [id])
+}
+
+model PriceHistory {
+  id              String     @id @default(uuid())
+  softwareId      String
+  oldPrice        Float
+  newPrice        Float
+  changedAt       DateTime   @default(now())
+
+  software        Software   @relation(fields: [softwareId], references: [id])
+}
+
+model UserOrderHistory {
+  id              String     @id @default(uuid())
+  userId          String
+  orderId         String
+  createdAt       DateTime   @default(now())
+
+  user            User       @relation(fields: [userId], references: [id])
+  order           Order      @relation(fields: [orderId], references: [id])
+}
+
