@@ -47,6 +47,7 @@ model User {
   role            UserRole         @default(CUSTOMER)
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
+  isSocial        Boolean          @default(false)
 
   // Relationships
   profile         Profile?
