@@ -4,6 +4,7 @@ import {
   PrismaClientKnownRequestError,
   PrismaClientValidationError,
 } from "@prisma/client/runtime/library";
+import config from "../config";
 
 const errorMiddleware = (
   err: any,
@@ -14,7 +15,7 @@ const errorMiddleware = (
   err.message = err.message || "Internal Server Error";
   err.statusCode = err.statusCode || 500;
 
-  if (process.env.NODE_ENV === "development") {
+  if (config.NODE_ENV === "development") {
     console.error(`Error: ${err.stack}`);
   }
 
@@ -51,7 +52,7 @@ const errorMiddleware = (
   res.status(err.statusCode).json({
     success: false,
     message:
-      process.env.NODE_ENV === "production"
+      config.NODE_ENV === "production"
         ? err.isOperational
           ? err.message
           : "Something went wrong!"

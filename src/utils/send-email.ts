@@ -4,6 +4,7 @@ import nodemailer, {
   SendMailOptions,
 } from "nodemailer";
 import dotenv from "dotenv";
+import config from "../config";
 
 dotenv.config();
 
@@ -15,19 +16,19 @@ interface iMailOptions {
 
 export const sendMail = async (options: iMailOptions) => {
   const transporter: Transporter<SentMessageInfo> = nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: process.env.SMTP_PORT,
-    service: process.env.SMTP_SERVICE,
+    host: config.SMTP_HOST,
+    port: config.SMTP_PORT,
+    service: config.SMTP_SERVICE,
     auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
+      user: config.SMTP_USER,
+      pass: config.SMTP_PASS,
     },
   } as SendMailOptions);
 
   const { to, subject, html } = options;
 
   const mailOptions = {
-    from: process.env.SMTP_USER,
+    from: config.SMTP_USER,
     to,
     subject,
     html,
