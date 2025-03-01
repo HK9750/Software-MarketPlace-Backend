@@ -42,6 +42,7 @@ enum NotificationType {
 
 model User {
   id              String           @id @default(uuid())
+  username        String           @unique
   email           String           @unique
   password        String
   role            UserRole         @default(CUSTOMER)
@@ -62,6 +63,7 @@ model User {
   sellerProfile   SellerProfile?
 
   UserOrderHistory UserOrderHistory[]
+
 }
 
 model Profile {
