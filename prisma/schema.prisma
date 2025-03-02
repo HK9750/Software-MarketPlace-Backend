@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
@@ -15,7 +9,6 @@ generator client {
 
 enum UserRole {
   CUSTOMER
-  SELLER
   ADMIN
 }
 
@@ -60,10 +53,8 @@ model User {
   reviews         Review[]
   notifications   Notification[]
   licenses        LicenseKey[]
-  sellerProfile   SellerProfile?
 
   UserOrderHistory UserOrderHistory[]
-
 }
 
 model Profile {
@@ -77,14 +68,6 @@ model Profile {
   user        User     @relation(fields: [userId], references: [id])
 }
 
-model SellerProfile {
-  id              String     @id @default(uuid())
-  verified        Boolean    @default(false)
-  userId          String     @unique
-  user            User       @relation(fields: [userId], references: [id])
-  softwareProducts Software[]
-}
-
 model Software {
   id              String       @id @default(uuid())
   name            String
@@ -94,15 +77,12 @@ model Software {
   features        Json
   requirements    Json
   categoryId      String
-  sellerId        String
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt
   deletedAt       DateTime?
-  isApproved      Boolean      @default(false)
 
   // Relationships
   category        Category     @relation(fields: [categoryId], references: [id])
-  seller          SellerProfile @relation(fields: [sellerId], references: [id])
   orders          OrderItem[]
   reviews         Review[]
   wishlist        Wishlist[]
@@ -110,10 +90,8 @@ model Software {
   licenses        LicenseKey[]
   priceHistory    PriceHistory[]
   subscriptions   SubscriptionPlan[]
-
-  Notification Notification[]
-
-  Order Order[]
+  Notification    Notification[]
+  Order           Order[]
 }
 
 model Category {
@@ -161,7 +139,7 @@ model Order {
 
   // Relationships
   user            User        @relation(fields: [userId], references: [id])
-  Software Software @relation(fields: [softwareId], references: [id])
+  Software        Software    @relation(fields: [softwareId], references: [id])
 }
 
 model OrderItem {
@@ -174,7 +152,7 @@ model OrderItem {
   order           Order      @relation(fields: [orderId], references: [id])
   software        Software   @relation(fields: [softwareId], references: [id])
 
-  LicenseKey LicenseKey[]
+  LicenseKey      LicenseKey[]
 }
 
 model Cart {
@@ -213,7 +191,7 @@ model SubscriptionPlan {
   // Relationships
   software        Software     @relation(fields: [softwareId], references: [id])
   subscriptions   Subscription[]
-} 
+}
 
 model Subscription {
   id              String           @id @default(uuid())
@@ -239,7 +217,7 @@ model Payment {
   transactionId   String     @unique
   status          String
   userId          String
-  orderId         String? @unique
+  orderId         String?    @unique
   subscriptionId  String?
   createdAt       DateTime   @default(now())
 
@@ -255,7 +233,7 @@ model Review {
   comment         String?
   userId          String
   softwareId      String
-  isApproved        Boolean    @default(false)
+  isApproved      Boolean    @default(false)
   createdAt       DateTime   @default(now())
 
   // Relationships
@@ -269,7 +247,7 @@ model Notification {
   userId          String
   softwareId      String?
   message         String
-  isRead            Boolean          @default(false)
+  isRead          Boolean          @default(false)
   createdAt       DateTime         @default(now())
 
   // Relationships
@@ -296,4 +274,3 @@ model UserOrderHistory {
   user            User       @relation(fields: [userId], references: [id])
   order           Order      @relation(fields: [orderId], references: [id])
 }
-
