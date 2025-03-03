@@ -4,7 +4,7 @@ import ErrorHandler from "../utils/error-handler";
 import prisma from "../lib/prisma";
 import { exclude } from "../utils/exclude";
 
-export const getProfile = AsyncErrorHandler(async (req: Request, res: Response) => {
+export const getProfile = AsyncErrorHandler(async (req: Request, res: Response,next:NextFunction) => {
   const user = await prisma.user.findUnique({
     where: {
       id: req.user?.id,
@@ -12,10 +12,7 @@ export const getProfile = AsyncErrorHandler(async (req: Request, res: Response) 
   });
 
   if (!user) {
-    return res.status(404).json({
-      success: false,
-      message: "User not found",
-    });
+    return next(new ErrorHandler("User not found", 404));
   }
 
   const safeUser = exclude(user, ["password"]);
@@ -59,7 +56,7 @@ export const updateProfile = AsyncErrorHandler(async (req: Request, res: Respons
 });
 
 
-export const getSellerProfile = AsyncErrorHandler(async (req: Request, res: Response) => {
+export const getSellerProfile = AsyncErrorHandler(async (req: Request, res: Response,next:NextFunction) => {
   const user = await prisma.user.findUnique({
     where: {
       id: req.params.id,
@@ -80,7 +77,7 @@ export const getSellerProfile = AsyncErrorHandler(async (req: Request, res: Resp
   });
 
   if (!user) {
-    throw new ErrorHandler("User not found", 404);
+    return next(new ErrorHandler("User not found", 404));
   }
 
   res.status(200).json({
