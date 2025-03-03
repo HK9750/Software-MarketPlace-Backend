@@ -10,7 +10,7 @@ import { generatePasswordResetEmailHtml } from "../lib/emails/forgot-password-em
 import config from "../config";
 import prisma from "../lib/prisma";
 
-const generateTokens = (userId: string) => {
+export const generateTokens = (userId: string) => {
   const accessTokenOptions: jwt.SignOptions = {
     expiresIn: parseInt(config.JWT_ACCESS_SECRET_EXPIRY),
     algorithm: "HS256",
@@ -142,6 +142,8 @@ export const activate = AsyncErrorHandler(
 
 export const login = AsyncErrorHandler(
   async (req: Request, res: Response, next: NextFunction) => {
+    console.log("request body is", req.body);
+
     const { email, password } = req.body;
     const user = await prisma.user.findUnique({ where: { email } });
 

@@ -12,6 +12,9 @@
     "prisma:seed": "prisma db seed",
     "prisma:studio": "prisma studio"
   },
+  "prisma": {
+    "seed": "ts-node prisma/seed.ts"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
@@ -39,9 +42,11 @@
     "@types/cors": "^2.8.17",
     "@types/express": "5.0.0",
     "@types/express-fileupload": "^1.5.1",
-    "@types/node": "^22.13.0",
+    "@types/node": "^22.13.9",
     "@types/nodemailer": "^6.4.17",
+    "prettier": "^3.5.3",
+    "ts-node": "^10.9.2",
     "ts-node-dev": "^2.0.0",
-    "typescript": "^5.4.5"
+    "typescript": "^5.8.2"
   }
 }

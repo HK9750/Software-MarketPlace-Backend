@@ -18,6 +18,7 @@ export const authenticateUser = (
 ) => {
   const token = req.headers.authorization?.split(" ")[1];
   if (!token) return next(new ErrorHandler("Not authorized", 401));
+ 
 
   try {
     const decoded = jwt.verify(token, config.JWT_ACCESS_SECRET) as {
@@ -25,7 +26,7 @@ export const authenticateUser = (
     };
     req.user = decoded;
     next();
-  } catch {
+  } catch (error) {
     return next(new ErrorHandler("Invalid or expired token", 401));
   }
 };

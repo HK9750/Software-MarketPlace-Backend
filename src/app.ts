@@ -11,6 +11,7 @@ import rateLimit from "express-rate-limit";
 import errorMiddleware from "./middlewares/error-middleware";
 
 import authRoutes from "./routes/auth-routes";
+import profileRoutes from "./routes/profile-routes";
 
 dotenv.config();
 
@@ -38,6 +39,7 @@ app.use(limiter);
 
 // Routes
 app.use("/api/v1/auth", authRoutes);
+app.use("/api/v1/profile", profileRoutes);
 
 app.get("/test", (req: Request, res: Response, next: NextFunction) => {
   res.status(200).json({
