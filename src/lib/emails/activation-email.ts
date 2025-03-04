@@ -1,8 +1,8 @@
 export const generateActivationEmailHtml = (
-  username: string,
-  activationCode: string
+    username: string,
+    activationCode: string
 ): string => {
-  return `<!DOCTYPE html>
+    return `<!DOCTYPE html>
     <html>
       <head>
         <meta charset="UTF-8" />

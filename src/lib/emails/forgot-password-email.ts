@@ -1,9 +1,9 @@
 export const generatePasswordResetEmailHtml = (
-  username: string,
-  resetCode: string,
-  resetLink?: string
+    username: string,
+    resetCode: string,
+    resetLink?: string
 ): string => {
-  return `<!DOCTYPE html>
+    return `<!DOCTYPE html>
       <html>
         <head>
           <meta charset="UTF-8" />
@@ -96,8 +96,8 @@ export const generatePasswordResetEmailHtml = (
                       </p>
                       
                       ${
-                        resetLink
-                          ? `
+                          resetLink
+                              ? `
                       <p style="margin: 25px 0; text-align: center;">
                         <a
                           href="${resetLink}"
@@ -116,7 +116,7 @@ export const generatePasswordResetEmailHtml = (
                         </a>
                       </p>
                       `
-                          : ""
+                              : ''
                       }
       
                       <p style="margin: 20px 0 15px; font-size: 16px; line-height: 1.6;">
