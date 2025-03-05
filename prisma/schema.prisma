@@ -27,7 +27,7 @@ enum OrderStatus {
 }
 
 enum SubscriptionStatus {
-  ACTIVE
+  ACTIVE 
   CANCELED
   EXPIRED
   PAUSED
@@ -93,15 +93,15 @@ model Software {
   discount        Float
   features        Json
   requirements    Json
-  categoryId      String
+  categoryId      String?
   sellerId        String
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt
-  deletedAt       DateTime?
-  isApproved      Boolean      @default(false)
+  status          Int          @default(0) // 0 = PENDING, 1 = ACTIVE, 2 = INACTIVE
+  avergaeRating   Float        @default(0)
 
   // Relationships
-  category        Category     @relation(fields: [categoryId], references: [id])
+  category        Category?     @relation(fields: [categoryId], references: [id])
   seller          SellerProfile @relation(fields: [sellerId], references: [id])
   orders          OrderItem[]
   reviews         Review[]

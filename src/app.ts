@@ -12,6 +12,8 @@ import errorMiddleware from './middlewares/error-middleware';
 
 import authRoutes from './routes/auth-routes';
 import profileRoutes from './routes/profile-routes';
+import productRoutes from './routes/product-routes';
+import CategoryRoutes from './routes/category-routes';
 
 dotenv.config();
 
@@ -37,9 +39,10 @@ app.use(cors(options));
 app.use(express.json({ limit: '50mb' }));
 app.use(limiter);
 
-// Routes
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/profile', profileRoutes);
+app.use('/api/v1/products', productRoutes);
+app.use('/api/v1/categories', CategoryRoutes);
 
 app.get('/test', (req: Request, res: Response, next: NextFunction) => {
     res.status(200).json({

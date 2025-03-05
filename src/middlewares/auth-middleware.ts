@@ -39,3 +39,14 @@ export const authorizeAdmin = (
         return next(new ErrorHandler('Access denied', 403));
     next();
 };
+
+export const authorizeSellerOrAdmin = (
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+    if (req.user?.role !== 'SELLER' && req.user?.role !== 'ADMIN')
+        return next(new ErrorHandler('Access denied', 403));
+    next();
+}
+
