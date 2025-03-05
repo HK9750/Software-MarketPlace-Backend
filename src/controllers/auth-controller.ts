@@ -176,6 +176,7 @@ export const socialLogin = AsyncErrorHandler(
                     id: uuidv4(),
                     username,
                     email,
+                    isSocial: true,
                     password: '',
                     role: 'CUSTOMER',
                 },
