@@ -8,7 +8,9 @@ export const AddReview = AsyncErrorHandler(
         const { rating, comment, softwareId } = req.body;
 
         if (!rating || !comment) {
-            return next(new ErrorHandler('Please provide rating and comment', 400));
+            return next(
+                new ErrorHandler('Please provide rating and comment', 400)
+            );
         }
 
         const userId = req.user?.id;
@@ -20,14 +22,21 @@ export const AddReview = AsyncErrorHandler(
             where: { userId, softwareId },
         });
         if (!license) {
-            return next(new ErrorHandler('You are not eligible to review this product', 403));
+            return next(
+                new ErrorHandler(
+                    'You are not eligible to review this product',
+                    403
+                )
+            );
         }
 
         const existingReview = await prisma.review.findFirst({
             where: { userId, softwareId },
         });
         if (existingReview) {
-            return next(new ErrorHandler('You have already reviewed this product', 400));
+            return next(
+                new ErrorHandler('You have already reviewed this product', 400)
+            );
         }
 
         const review = await prisma.$transaction(async (tx) => {
@@ -64,7 +73,6 @@ export const AddReview = AsyncErrorHandler(
 
 export const GetProductReviews = AsyncErrorHandler(
     async (req: Request, res: Response, next: NextFunction) => {
-
         const reviews = await prisma.review.findMany({
             where: {
                 softwareId: req.params.softwareId as string,

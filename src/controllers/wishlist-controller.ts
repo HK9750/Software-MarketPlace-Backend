@@ -75,9 +75,8 @@ export const DeleteFromWishlist = AsyncErrorHandler(
 
         await prisma.wishlist.deleteMany({
             where: { userId, softwareId },
-        })
+        });
 
-    
         res.status(200).json({
             success: true,
             message: 'Product removed from wishlist successfully',

@@ -48,7 +48,7 @@ export const getAllProducts = AsyncErrorHandler(
         let wishlistSoftwareIds = new Set<string>();
 
         if (req.user) {
-            const productIds = products.map(product => product.id);
+            const productIds = products.map((product) => product.id);
 
             const wishlistEntries = await prisma.wishlist.findMany({
                 where: {
@@ -60,10 +60,12 @@ export const getAllProducts = AsyncErrorHandler(
                 },
             });
 
-            wishlistEntries.forEach(entry => wishlistSoftwareIds.add(entry.softwareId));
+            wishlistEntries.forEach((entry) =>
+                wishlistSoftwareIds.add(entry.softwareId)
+            );
         }
 
-        const productsWithWishlistFlag = products.map(product => ({
+        const productsWithWishlistFlag = products.map((product) => ({
             ...product,
             isWishlisted: wishlistSoftwareIds.has(product.id),
         }));
@@ -75,7 +77,6 @@ export const getAllProducts = AsyncErrorHandler(
         });
     }
 );
-
 
 export const getProduct = AsyncErrorHandler(
     async (req: Request, res: Response, next: NextFunction) => {
@@ -156,7 +157,7 @@ export const createProduct = AsyncErrorHandler(
         } = req.body;
 
         if (!req.files || !req.files.image) {
-            return next(new ErrorHandler("No image file provided", 400));
+            return next(new ErrorHandler('No image file provided', 400));
         }
 
         const file = req.files.image as UploadedFile;
@@ -167,10 +168,10 @@ export const createProduct = AsyncErrorHandler(
 
         const uploadedImage = await uploadOnCloudinary(tempPath);
         if (!uploadedImage) {
-            return next(new ErrorHandler("Image upload failed", 500));
+            return next(new ErrorHandler('Image upload failed', 500));
         }
         const filePath = uploadedImage.secure_url;
-        console.log(filePath)
+        console.log(filePath);
         const product = await prisma.software.create({
             data: {
                 name,

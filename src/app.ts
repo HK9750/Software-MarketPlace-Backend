@@ -48,7 +48,7 @@ app.use('/api/v1/categories', CategoryRoutes);
 app.use('/api/v1/reviews', ReviewRoutes);
 app.use('/api/v1/wishlist', WishListRoutes);
 
-app.get('/test',(req: Request, res: Response, next: NextFunction) => {
+app.get('/test', (req: Request, res: Response, next: NextFunction) => {
     res.status(200).json({
         message: 'API is working!',
         success: true,
