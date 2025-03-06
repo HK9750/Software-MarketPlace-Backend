@@ -15,9 +15,7 @@ const errorMiddleware = (
     err.message = err.message || 'Internal Server Error';
     err.statusCode = err.statusCode || 500;
 
-    if (config.NODE_ENV === 'development') {
-        console.error(`Error: ${err.stack}`);
-    }
+    console.log(err.message);
 
     if (err instanceof PrismaClientKnownRequestError) {
         if (err.code === 'P2002') {

@@ -12,7 +12,7 @@ import prisma from '../lib/prisma';
 
 export const generateTokens = (userId: string) => {
     const accessTokenOptions: jwt.SignOptions = {
-        expiresIn: parseInt(config.JWT_ACCESS_SECRET_EXPIRY),
+        expiresIn: config.JWT_ACCESS_SECRET_EXPIRY,
         algorithm: 'HS256',
     };
 
@@ -23,7 +23,7 @@ export const generateTokens = (userId: string) => {
     );
 
     const refreshTokenOptions: jwt.SignOptions = {
-        expiresIn: parseInt(config.JWT_REFRESH_SECRET_EXPIRY),
+        expiresIn: config.JWT_REFRESH_SECRET_EXPIRY,
         algorithm: 'HS256',
     };
 
@@ -38,7 +38,7 @@ export const generateTokens = (userId: string) => {
 
 const generateActivationToken = (payload: any) => {
     const activationTokenOptions: jwt.SignOptions = {
-        expiresIn: parseInt(config.ACTIVATION_EXPIRY),
+        expiresIn: config.ACTIVATION_EXPIRY,
         algorithm: 'HS256',
     };
 
@@ -136,8 +136,8 @@ export const activate = AsyncErrorHandler(
             success: true,
             message: 'Account activated successfully',
             user: sanitizeUser(newUser),
-            accessToken,
-            refreshToken,
+            access_token: accessToken,
+            refresh_token: refreshToken,
         });
     }
 );
@@ -184,6 +184,8 @@ export const socialLogin = AsyncErrorHandler(
         }
 
         const { accessToken, refreshToken } = generateTokens(user.id);
+        console.log('Access token is', accessToken);
+        console.log('Refresh token is', refreshToken);
         res.status(200).json({
             success: true,
             message: 'Logged in successfully',
@@ -210,7 +212,7 @@ export const refreshToken = AsyncErrorHandler(
             }
 
             const accessTokenOptions: jwt.SignOptions = {
-                expiresIn: parseInt(config.JWT_ACCESS_SECRET_EXPIRY),
+                expiresIn: config.JWT_ACCESS_SECRET_EXPIRY,
                 algorithm: 'HS256',
             };
 
@@ -242,7 +244,7 @@ export const forgotPassword = AsyncErrorHandler(
         }
 
         const resetToken = jwt.sign({ id: user.id }, config.RESET_SECRET, {
-            expiresIn: parseInt(config.RESET_SECRET_EXPIRY),
+            expiresIn: config.RESET_SECRET_EXPIRY,
             algorithm: 'HS256',
         });
 

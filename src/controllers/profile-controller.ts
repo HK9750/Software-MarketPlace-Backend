@@ -21,7 +21,7 @@ export const getProfile = AsyncErrorHandler(
         res.status(200).json({
             success: true,
             message: 'Profile retrieved successfully',
-            data: safeUser,
+            user: safeUser,
         });
     }
 );
