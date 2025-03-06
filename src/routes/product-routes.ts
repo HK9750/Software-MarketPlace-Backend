@@ -17,10 +17,14 @@ const router = express.Router();
 router.post('/', authenticateUser, authorizeSellerOrAdmin, createProduct);
 
 router.put('/:id', authenticateUser, authorizeSellerOrAdmin, updateProduct);
-router.put('/:id/status/:status', authenticateUser, authorizeAdmin, UpdateStatus);
+router.put(
+    '/:id/status/:status',
+    authenticateUser,
+    authorizeAdmin,
+    UpdateStatus
+);
 
 router.get('/', getAllProducts);
 router.get('/:id', getProduct);
-
 
 export default router;
