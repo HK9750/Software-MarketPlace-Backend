@@ -24,6 +24,10 @@ const config = {
     RESET_SECRET_EXPIRY: Number(process.env.RESET_SECRET_EXPIRY) || 300,
     RESET_SECRET: process.env.RESET_SECRET || 'default_reset_secret',
 
+    CLOUD_NAME: process.env.CLOUD_NAME || '',
+    CLOUD_API_KEY: process.env.CLOUD_API_KEY || '',
+    CLOUD_SECRET_KEY: process.env.CLOUD_SECRET_KEY || '',
+
     SMTP_HOST: process.env.SMTP_HOST || 'smtp.gmail.com',
     SMTP_SERVICE: process.env.SMTP_SERVICE || 'gmail',
     SMTP_USER: process.env.SMTP_USER || '',

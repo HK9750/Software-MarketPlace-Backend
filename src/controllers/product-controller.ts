@@ -2,10 +2,13 @@ import { Request, Response, NextFunction } from 'express';
 import AsyncErrorHandler from '../utils/async-handler';
 import ErrorHandler from '../utils/error-handler';
 import prisma from '../lib/prisma';
+import { UploadedFile } from 'express-fileupload';
+import { uploadOnCloudinary } from '../lib/cloudinary';
 
 export const getAllProducts = AsyncErrorHandler(
     async (req: Request, res: Response, next: NextFunction) => {
         const { status, category } = req.query;
+
         const products = await prisma.software.findMany({
             where: {
                 status: status ? parseInt(status as string) : 1,
@@ -38,17 +41,41 @@ export const getAllProducts = AsyncErrorHandler(
                         },
                     },
                 },
-                avergaeRating: true,
+                averageRating: true,
             },
         });
+
+        let wishlistSoftwareIds = new Set<string>();
+
+        if (req.user) {
+            const productIds = products.map(product => product.id);
+
+            const wishlistEntries = await prisma.wishlist.findMany({
+                where: {
+                    userId: req.user.id,
+                    softwareId: { in: productIds },
+                },
+                select: {
+                    softwareId: true,
+                },
+            });
+
+            wishlistEntries.forEach(entry => wishlistSoftwareIds.add(entry.softwareId));
+        }
+
+        const productsWithWishlistFlag = products.map(product => ({
+            ...product,
+            isWishlisted: wishlistSoftwareIds.has(product.id),
+        }));
 
         res.status(200).json({
             success: true,
             message: 'Products retrieved successfully',
-            data: products,
+            data: productsWithWishlistFlag,
         });
     }
 );
+
 
 export const getProduct = AsyncErrorHandler(
     async (req: Request, res: Response, next: NextFunction) => {
@@ -85,7 +112,7 @@ export const getProduct = AsyncErrorHandler(
                     },
                 },
                 reviews: true,
-                avergaeRating: true,
+                averageRating: true,
             },
         });
 
@@ -93,10 +120,24 @@ export const getProduct = AsyncErrorHandler(
             return next(new ErrorHandler('Product not found', 404));
         }
 
+        let isWishlisted = false;
+        if (req.user) {
+            const wishlistEntry = await prisma.wishlist.findFirst({
+                where: {
+                    userId: req.user.id,
+                    softwareId: req.params.id,
+                },
+            });
+            isWishlisted = Boolean(wishlistEntry);
+        }
+
         res.status(200).json({
             success: true,
             message: 'Product retrieved successfully',
-            data: product,
+            data: {
+                ...product,
+                isWishlisted,
+            },
         });
     }
 );
@@ -114,6 +155,22 @@ export const createProduct = AsyncErrorHandler(
             discount,
         } = req.body;
 
+        if (!req.files || !req.files.image) {
+            return next(new ErrorHandler("No image file provided", 400));
+        }
+
+        const file = req.files.image as UploadedFile;
+
+        const tempPath = `./public/temp/${file.name}`;
+
+        await file.mv(tempPath);
+
+        const uploadedImage = await uploadOnCloudinary(tempPath);
+        if (!uploadedImage) {
+            return next(new ErrorHandler("Image upload failed", 500));
+        }
+        const filePath = uploadedImage.secure_url;
+        console.log(filePath)
         const product = await prisma.software.create({
             data: {
                 name,
@@ -122,6 +179,7 @@ export const createProduct = AsyncErrorHandler(
                 features,
                 requirements,
                 discount,
+                filePath,
                 category: {
                     connect: { id: categoryId },
                 },
@@ -138,7 +196,6 @@ export const createProduct = AsyncErrorHandler(
         res.status(201).json({
             success: true,
             message: 'Product created successfully',
-            data: product,
         });
     }
 );

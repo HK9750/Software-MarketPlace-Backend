@@ -14,6 +14,8 @@ import authRoutes from './routes/auth-routes';
 import profileRoutes from './routes/profile-routes';
 import productRoutes from './routes/product-routes';
 import CategoryRoutes from './routes/category-routes';
+import ReviewRoutes from './routes/review-routes';
+import WishListRoutes from './routes/wishlist-routes';
 
 dotenv.config();
 
@@ -43,8 +45,10 @@ app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/profile', profileRoutes);
 app.use('/api/v1/products', productRoutes);
 app.use('/api/v1/categories', CategoryRoutes);
+app.use('/api/v1/reviews', ReviewRoutes);
+app.use('/api/v1/wishlist', WishListRoutes);
 
-app.get('/test', (req: Request, res: Response, next: NextFunction) => {
+app.get('/test',(req: Request, res: Response, next: NextFunction) => {
     res.status(200).json({
         message: 'API is working!',
         success: true,

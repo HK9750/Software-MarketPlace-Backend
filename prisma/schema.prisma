@@ -93,12 +93,13 @@ model Software {
   discount        Float
   features        Json
   requirements    Json
+  filePath        String
   categoryId      String?
   sellerId        String
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt
   status          Int          @default(0) // 0 = PENDING, 1 = ACTIVE, 2 = INACTIVE
-  avergaeRating   Float        @default(0)
+  averageRating   Float        @default(0)
 
   // Relationships
   category        Category?     @relation(fields: [categoryId], references: [id])
@@ -251,8 +252,8 @@ model Review {
   comment         String?
   userId          String
   softwareId      String
-  isApproved        Boolean    @default(false)
   createdAt       DateTime   @default(now())
+  isDeleted          Boolean        @default(false) 
 
   // Relationships
   user            User       @relation(fields: [userId], references: [id])
