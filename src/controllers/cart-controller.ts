@@ -3,62 +3,66 @@ import AsyncErrorHandler from '../utils/async-handler';
 import ErrorHandler from '../utils/error-handler';
 import prisma from '../lib/prisma';
 
-export const getCartItems = AsyncErrorHandler(async (req: Request, res: Response, next: NextFunction) => {
-    const userId = req.user?.id;
-    if (!userId) {
-        return next(new ErrorHandler('User not authenticated', 401));
-    }
-    const cartItems = await prisma.cart.findMany({
-        where: {userId},
-        select: {
-            id: true,
-            software: {
-                select: {
-                    id: true,
-                    name: true,
-                    price: true,
-                    discount: true,
-                    filePath: true,
-                }
-            }
+export const getCartItems = AsyncErrorHandler(
+    async (req: Request, res: Response, next: NextFunction) => {
+        const userId = req.user?.id;
+        if (!userId) {
+            return next(new ErrorHandler('User not authenticated', 401));
         }
-    })
-    res.status(200).json({
-        success: true,
-        message: 'Cart items retrieved successfully',
-        data: cartItems,
-    });
-});
-
-export const addToCart = AsyncErrorHandler(async (req: Request, res: Response, next: NextFunction) => {
-    const { softwareId } = req.body;
-
-    const userId = req.user?.id;
-    if (!userId) {
-        return next(new ErrorHandler('User not authenticated', 401));
+        const cartItems = await prisma.cart.findMany({
+            where: { userId },
+            select: {
+                id: true,
+                software: {
+                    select: {
+                        id: true,
+                        name: true,
+                        price: true,
+                        discount: true,
+                        filePath: true,
+                    },
+                },
+            },
+        });
+        res.status(200).json({
+            success: true,
+            message: 'Cart items retrieved successfully',
+            data: cartItems,
+        });
     }
+);
 
-    const existingCartItem = await prisma.cart.findFirst({
-        where: { userId, softwareId },
-    });
-    if (existingCartItem) {
-        return next(new ErrorHandler('Product already in cart', 400));
+export const addToCart = AsyncErrorHandler(
+    async (req: Request, res: Response, next: NextFunction) => {
+        const { softwareId } = req.body;
+
+        const userId = req.user?.id;
+        if (!userId) {
+            return next(new ErrorHandler('User not authenticated', 401));
+        }
+
+        const existingCartItem = await prisma.cart.findFirst({
+            where: { userId, softwareId },
+        });
+        if (existingCartItem) {
+            return next(new ErrorHandler('Product already in cart', 400));
+        }
+
+        const cartItem = await prisma.cart.create({
+            data: {
+                userId,
+                softwareId,
+                quantity: 1,
+            },
+        });
+
+        res.status(201).json({
+            success: true,
+            message: 'Product added to cart successfully',
+            data: cartItem,
+        });
     }
-
-    const cartItem = await prisma.cart.create({
-        data: {
-            userId,
-            softwareId,
-            quantity: 1,
-        },
-    });
-
-    res.status(201).json({
-        success: true,
-        message: 'Product added to cart successfully',
-        data: cartItem,
-    });
-});
+);
 
 export const removeItemFromCart = AsyncErrorHandler(
     async (req: Request, res: Response, next: NextFunction) => {
@@ -88,18 +92,20 @@ export const removeItemFromCart = AsyncErrorHandler(
     }
 );
 
-export const clearCart = AsyncErrorHandler(async (req: Request, res: Response, next: NextFunction) => {
-    const userId = req.user?.id;
-    if (!userId) {
-        return next(new ErrorHandler('User not authenticated', 401));
+export const clearCart = AsyncErrorHandler(
+    async (req: Request, res: Response, next: NextFunction) => {
+        const userId = req.user?.id;
+        if (!userId) {
+            return next(new ErrorHandler('User not authenticated', 401));
+        }
+
+        await prisma.cart.deleteMany({
+            where: { userId },
+        });
+
+        res.status(200).json({
+            success: true,
+            message: 'Cart cleared successfully',
+        });
     }
-
-    await prisma.cart.deleteMany({
-        where: { userId },
-    });
-
-    res.status(200).json({
-        success: true,
-        message: 'Cart cleared successfully',
-    });
-});
+);
