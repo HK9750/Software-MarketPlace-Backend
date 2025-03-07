@@ -1,7 +1,9 @@
 import express from 'express';
 import {
+    getUsers,
+    UpdateProfile,
     getProfile,
-    updateProfile,
+    setupProfile,
     getSellerProfile,
     VerifySellerProfile,
 } from '../controllers/profile-controller';
@@ -13,8 +15,10 @@ import {
 const router = express.Router();
 
 router.get('/', authenticateUser, getProfile);
-router.put('/', authenticateUser, updateProfile);
+router.put('/setup', authenticateUser, setupProfile);
+router.put('/update', authenticateUser, UpdateProfile);
 router.get('/seller/:id', authenticateUser, getSellerProfile);
+router.get('/users', authenticateUser, authorizeAdmin, getUsers);
 router.put(
     '/seller/:id',
     authenticateUser,

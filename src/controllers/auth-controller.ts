@@ -9,15 +9,16 @@ import { generateActivationEmailHtml } from '../lib/emails/activation-email';
 import { generatePasswordResetEmailHtml } from '../lib/emails/forgot-password-email';
 import config from '../config';
 import prisma from '../lib/prisma';
+import { UserRole } from '@prisma/client';
 
-export const generateTokens = (userId: string) => {
+export const generateTokens = (userId: string, role: UserRole) => {
     const accessTokenOptions: jwt.SignOptions = {
         expiresIn: config.JWT_ACCESS_SECRET_EXPIRY,
         algorithm: 'HS256',
     };
 
     const accessToken = jwt.sign(
-        { id: userId },
+        { id: userId, role: role },
         config.JWT_ACCESS_SECRET,
         accessTokenOptions
     );
@@ -131,7 +132,7 @@ export const activate = AsyncErrorHandler(
             },
         });
 
-        const { accessToken, refreshToken } = generateTokens(newUser.id);
+        const { accessToken, refreshToken } = generateTokens(newUser.id, newUser.role);
         res.status(200).json({
             success: true,
             message: 'Account activated successfully',
@@ -153,7 +154,7 @@ export const login = AsyncErrorHandler(
             return next(new ErrorHandler('Invalid email or password', 401));
         }
 
-        const { accessToken, refreshToken } = generateTokens(user.id);
+        const { accessToken, refreshToken } = generateTokens(user.id, user.role);
         res.status(200).json({
             success: true,
             message: 'Logged in successfully',
@@ -183,7 +184,7 @@ export const socialLogin = AsyncErrorHandler(
             });
         }
 
-        const { accessToken, refreshToken } = generateTokens(user.id);
+        const { accessToken, refreshToken } = generateTokens(user.id, user.role);
         console.log('Access token is', accessToken);
         console.log('Refresh token is', refreshToken);
         res.status(200).json({

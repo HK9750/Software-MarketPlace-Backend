@@ -71,7 +71,6 @@ model Profile {
   lastName    String
   phone       String?
   address     Json?
-  avatarUrl   String?
   userId      String   @unique
   user        User     @relation(fields: [userId], references: [id])
 }
