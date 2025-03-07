@@ -132,7 +132,10 @@ export const activate = AsyncErrorHandler(
             },
         });
 
-        const { accessToken, refreshToken } = generateTokens(newUser.id, newUser.role);
+        const { accessToken, refreshToken } = generateTokens(
+            newUser.id,
+            newUser.role
+        );
         res.status(200).json({
             success: true,
             message: 'Account activated successfully',
@@ -154,7 +157,10 @@ export const login = AsyncErrorHandler(
             return next(new ErrorHandler('Invalid email or password', 401));
         }
 
-        const { accessToken, refreshToken } = generateTokens(user.id, user.role);
+        const { accessToken, refreshToken } = generateTokens(
+            user.id,
+            user.role
+        );
         res.status(200).json({
             success: true,
             message: 'Logged in successfully',
@@ -184,7 +190,10 @@ export const socialLogin = AsyncErrorHandler(
             });
         }
 
-        const { accessToken, refreshToken } = generateTokens(user.id, user.role);
+        const { accessToken, refreshToken } = generateTokens(
+            user.id,
+            user.role
+        );
         console.log('Access token is', accessToken);
         console.log('Refresh token is', refreshToken);
         res.status(200).json({

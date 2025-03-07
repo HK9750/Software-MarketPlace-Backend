@@ -29,10 +29,11 @@ export const getProfile = AsyncErrorHandler(
 
 export const setupProfile = AsyncErrorHandler(
     async (req: Request, res: Response, next: NextFunction) => {
-        const { firstName, lastName, phone, address, websiteLink, role } = req.body;
+        const { firstName, lastName, phone, address, websiteLink, role } =
+            req.body;
         const userId = req.user?.id;
         if (!userId) {
-            return next(new ErrorHandler("User not authenticated", 401));
+            return next(new ErrorHandler('User not authenticated', 401));
         }
 
         const data: any = {
@@ -70,13 +71,15 @@ export const setupProfile = AsyncErrorHandler(
                 email: true,
                 role: true,
                 profile: true,
-                sellerProfile: websiteLink ? { select: { websiteLink: true } } : true,
+                sellerProfile: websiteLink
+                    ? { select: { websiteLink: true } }
+                    : true,
             },
         });
 
         res.status(201).json({
             success: true,
-            message: "Profile setup successfully",
+            message: 'Profile setup successfully',
             data: user,
         });
     }
@@ -84,10 +87,11 @@ export const setupProfile = AsyncErrorHandler(
 
 export const UpdateProfile = AsyncErrorHandler(
     async (req: Request, res: Response, next: NextFunction) => {
-        const { firstName, lastName, phone, address, websiteLink, role } = req.body;
+        const { firstName, lastName, phone, address, websiteLink, role } =
+            req.body;
         const userId = req.user?.id;
         if (!userId) {
-            return next(new ErrorHandler("User not authenticated", 401));
+            return next(new ErrorHandler('User not authenticated', 401));
         }
 
         const data: any = {};
@@ -96,7 +100,12 @@ export const UpdateProfile = AsyncErrorHandler(
             data.role = role;
         }
 
-        if (firstName !== undefined || lastName !== undefined || phone !== undefined || address !== undefined) {
+        if (
+            firstName !== undefined ||
+            lastName !== undefined ||
+            phone !== undefined ||
+            address !== undefined
+        ) {
             data.profile = {
                 update: {
                     firstName,
@@ -124,13 +133,16 @@ export const UpdateProfile = AsyncErrorHandler(
                 email: true,
                 role: true,
                 profile: true,
-                sellerProfile: websiteLink !== undefined ? { select: { websiteLink: true } } : true,
+                sellerProfile:
+                    websiteLink !== undefined
+                        ? { select: { websiteLink: true } }
+                        : true,
             },
         });
 
         res.status(200).json({
             success: true,
-            message: "Profile updated successfully",
+            message: 'Profile updated successfully',
             data: user,
         });
     }
@@ -208,12 +220,20 @@ export const VerifySellerProfile = AsyncErrorHandler(
 export const getUsers = AsyncErrorHandler(
     async (req: Request, res: Response) => {
         const { role, verified } = req.query;
-        const isVerified = verified === "true" ? true : verified === "false" ? false : undefined;
+        const isVerified =
+            verified === 'true'
+                ? true
+                : verified === 'false'
+                  ? false
+                  : undefined;
 
         const users = await prisma.user.findMany({
             where: {
-                role: role ? role as UserRole : undefined,
-                sellerProfile: isVerified !== undefined ? { verified: isVerified } : undefined,
+                role: role ? (role as UserRole) : undefined,
+                sellerProfile:
+                    isVerified !== undefined
+                        ? { verified: isVerified }
+                        : undefined,
             },
             select: {
                 id: true,
