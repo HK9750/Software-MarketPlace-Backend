@@ -16,6 +16,7 @@ import productRoutes from './routes/product-routes';
 import CategoryRoutes from './routes/category-routes';
 import ReviewRoutes from './routes/review-routes';
 import WishListRoutes from './routes/wishlist-routes';
+import CartRoutes from './routes/cart-routes';
 
 dotenv.config();
 
@@ -47,6 +48,7 @@ app.use('/api/v1/products', productRoutes);
 app.use('/api/v1/categories', CategoryRoutes);
 app.use('/api/v1/reviews', ReviewRoutes);
 app.use('/api/v1/wishlist', WishListRoutes);
+app.use('/api/v1/cart', CartRoutes);
 
 app.get('/test', (req: Request, res: Response, next: NextFunction) => {
     res.status(200).json({
