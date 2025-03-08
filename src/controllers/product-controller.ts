@@ -172,9 +172,13 @@ export const createProduct = AsyncErrorHandler(
         });
 
         if (!sellerProfile) {
-            return next(new ErrorHandler("Seller profile not found. Please complete your seller profile first.", 400));
+            return next(
+                new ErrorHandler(
+                    'Seller profile not found. Please complete your seller profile first.',
+                    400
+                )
+            );
         }
-
 
         const tempPath = `./public/temp/${file.name}`;
 

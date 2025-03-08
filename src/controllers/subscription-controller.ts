@@ -6,7 +6,7 @@ import ErrorHandler from '../utils/error-handler';
 
 interface AuthenticatedRequest extends Request {
     user: { id: string };
-} 
+}
 
 // Create a new subscription plan
 export const createSubscriptionPlan = AsyncErrorHandler(

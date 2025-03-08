@@ -1,7 +1,7 @@
 // src/types/express.d.ts
-import { Request } from "express";
+import { Request } from 'express';
 
-declare module "express" {
+declare module 'express' {
     export interface Request {
         user?: {
             id: string;
