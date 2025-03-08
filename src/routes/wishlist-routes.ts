@@ -9,7 +9,7 @@ import { authenticateUser } from '../middlewares/auth-middleware';
 const router = express.Router();
 
 router.post('/', authenticateUser, AddToWishlist);
-router.get('/:softwareId', authenticateUser, DeleteFromWishlist);
-router.put('/', authenticateUser, GetWishlist);
+router.put('/:softwareId', authenticateUser, DeleteFromWishlist);
+router.get('/', authenticateUser, GetWishlist);
 
 export default router;

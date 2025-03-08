@@ -11,7 +11,7 @@ export const getAllProducts = AsyncErrorHandler(
 
         const products = await prisma.software.findMany({
             where: {
-                status: status ? parseInt(status as string) : 1,
+                status: status ? parseInt(status as string) : undefined,
                 ...(category ? { categoryId: category as string } : {}),
             },
             select: {
@@ -36,7 +36,13 @@ export const getAllProducts = AsyncErrorHandler(
                                 id: true,
                                 username: true,
                                 email: true,
-                                profile: true,
+                                profile: {
+                                    select: {
+                                        firstName: true,
+                                        lastName: true,
+                                        phone: true,
+                                    },
+                                },
                             },
                         },
                     },
@@ -83,7 +89,6 @@ export const getProduct = AsyncErrorHandler(
         const product = await prisma.software.findUnique({
             where: {
                 id: req.params.id,
-                status: 1,
             },
             select: {
                 id: true,
@@ -152,7 +157,6 @@ export const createProduct = AsyncErrorHandler(
             features,
             requirements,
             categoryId,
-            sellerId,
             discount,
         } = req.body;
 
@@ -161,6 +165,16 @@ export const createProduct = AsyncErrorHandler(
         }
 
         const file = req.files.image as UploadedFile;
+
+        const sellerProfile = await prisma.sellerProfile.findFirst({
+            where: { userId: req.user?.id },
+            select: { id: true },
+        });
+
+        if (!sellerProfile) {
+            return next(new ErrorHandler("Seller profile not found. Please complete your seller profile first.", 400));
+        }
+
 
         const tempPath = `./public/temp/${file.name}`;
 
@@ -176,16 +190,16 @@ export const createProduct = AsyncErrorHandler(
             data: {
                 name,
                 description,
-                price,
+                price: parseFloat(price),
                 features,
                 requirements,
-                discount,
+                discount: parseFloat(discount),
                 filePath,
                 category: {
                     connect: { id: categoryId },
                 },
                 seller: {
-                    connect: { id: sellerId },
+                    connect: { id: sellerProfile.id },
                 },
             },
         });
@@ -197,6 +211,7 @@ export const createProduct = AsyncErrorHandler(
         res.status(201).json({
             success: true,
             message: 'Product created successfully',
+            data: product.id,
         });
     }
 );
