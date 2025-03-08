@@ -11,6 +11,10 @@ export const getProfile = AsyncErrorHandler(
             where: {
                 id: req.user?.id,
             },
+            include: {
+                profile: true,
+                sellerProfile: true,
+            },
         });
 
         if (!user) {
