@@ -24,6 +24,33 @@ export const createOrder = AsyncErrorHandler(
     }
 );
 
+export const getAllOrders = AsyncErrorHandler(
+    async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const orders = await prisma.order.findMany({
+                include: { items: true },
+            });
+            res.status(200).json({ success: true, data: orders });
+        } catch (error: any) {
+            return next(new ErrorHandler(error.message, 500));
+        }
+    }
+);
+
+export const getUserOrderHistory = AsyncErrorHandler(
+    async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+        const { id: userId } = req.params;
+        if (!userId) {
+            return next(new ErrorHandler('User ID is required', 400));
+        }
+        const orders = await prisma.userOrderHistory.findMany({
+            where: { userId },
+            include: { order: { include: { items: true } } },
+        });
+        res.status(200).json({ success: true, data: orders });
+    }
+);
+
 export const getOrder = AsyncErrorHandler(
     async (req: Request, res: Response, next: NextFunction) => {
         const orderId = req.params.id;
