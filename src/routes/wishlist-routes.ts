@@ -1,15 +1,14 @@
 import express from 'express';
 import {
-    AddToWishlist,
-    DeleteFromWishlist,
+   
     GetWishlist,
+    ToggleWishlist,
 } from '../controllers/wishlist-controller';
 import { authenticateUser } from '../middlewares/auth-middleware';
 
 const router = express.Router();
 
-router.post('/', authenticateUser, AddToWishlist);
-router.put('/:softwareId', authenticateUser, DeleteFromWishlist);
+router.post('/toggle/:softwareId', authenticateUser, ToggleWishlist);
 router.get('/', authenticateUser, GetWishlist);
 
 export default router;

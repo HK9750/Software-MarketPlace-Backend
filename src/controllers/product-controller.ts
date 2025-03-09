@@ -21,6 +21,7 @@ export const getAllProducts = AsyncErrorHandler(
                 price: true,
                 features: true,
                 requirements: true,
+                filePath: true,
                 category: {
                     select: {
                         id: true,
