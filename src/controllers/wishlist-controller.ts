@@ -3,7 +3,6 @@ import AsyncErrorHandler from '../utils/async-handler';
 import ErrorHandler from '../utils/error-handler';
 import prisma from '../lib/prisma';
 
-
 export const GetWishlist = AsyncErrorHandler(
     async (req: Request, res: Response, next: NextFunction) => {
         const userId = req.user?.id;
@@ -55,7 +54,7 @@ export const ToggleWishlist = AsyncErrorHandler(
             return res.status(201).json({
                 success: true,
                 message: 'Product added to wishlist successfully',
-                toggled: true, 
+                toggled: true,
                 data: wishlist,
             });
         }

@@ -1,6 +1,5 @@
 import express from 'express';
 import {
-   
     GetWishlist,
     ToggleWishlist,
 } from '../controllers/wishlist-controller';
