@@ -5,12 +5,16 @@ import {
     getCategory,
     updateCategory,
 } from '../controllers/category-controller';
+import {
+    authenticateUser,
+    authorizeAdmin,
+} from '../middlewares/auth-middleware';
 
 const router = express.Router();
 
 router.get('/', getAllCategories);
 router.get('/:id', getCategory);
-router.post('/', createCategory);
-router.put('/:id', updateCategory);
+router.post('/', authenticateUser, authorizeAdmin, createCategory);
+router.put('/:id', authenticateUser, authorizeAdmin, updateCategory);
 
 export default router;
