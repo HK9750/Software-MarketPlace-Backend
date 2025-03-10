@@ -25,6 +25,6 @@ router.put(
 );
 
 router.get('/', authenticateUser, getAllProducts);
-router.get('/:id', getProduct);
+router.get('/:id', authenticateUser, getProduct);
 
 export default router;

@@ -98,6 +98,7 @@ export const getProduct = AsyncErrorHandler(
                 price: true,
                 features: true,
                 requirements: true,
+                filePath: true,
                 category: {
                     select: {
                         id: true,
@@ -128,6 +129,8 @@ export const getProduct = AsyncErrorHandler(
         }
 
         let isWishlisted = false;
+        let isInCart = false;
+        // console.log('Yahan tk to aya h bhai ')
         if (req.user) {
             const wishlistEntry = await prisma.wishlist.findFirst({
                 where: {
@@ -135,7 +138,17 @@ export const getProduct = AsyncErrorHandler(
                     softwareId: req.params.id,
                 },
             });
+            // console.log("Wishlist Entry", wishlistEntry);
+            const cartEntry = await prisma.cart.findFirst({
+                where: {
+                    userId: req.user.id,
+                    softwareId: req.params.id,
+                },
+            });
+            // console.log("Cart Entry", cartEntry);
+
             isWishlisted = Boolean(wishlistEntry);
+            isInCart = Boolean(cartEntry);
         }
 
         res.status(200).json({
@@ -144,6 +157,7 @@ export const getProduct = AsyncErrorHandler(
             data: {
                 ...product,
                 isWishlisted,
+                isInCart,
             },
         });
     }
