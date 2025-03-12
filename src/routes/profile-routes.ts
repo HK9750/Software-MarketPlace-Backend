@@ -16,7 +16,7 @@ import {
 const router = express.Router();
 
 router.get('/', authenticateUser, getProfile);
-router.get('/me', authenticateUser, getMyProfile)
+router.get('/me', authenticateUser, getMyProfile);
 router.put('/setup', authenticateUser, setupProfile);
 router.put('/update', authenticateUser, UpdateProfile);
 router.get('/seller/:id', authenticateUser, getSellerProfile);

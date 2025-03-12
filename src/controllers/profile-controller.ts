@@ -167,8 +167,8 @@ export const UpdateProfile = AsyncErrorHandler(
             data,
             include: {
                 profile: true,
-                sellerProfile: true
-            }
+                sellerProfile: true,
+            },
         });
 
         res.status(200).json({
