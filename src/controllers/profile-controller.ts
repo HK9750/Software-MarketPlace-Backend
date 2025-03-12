@@ -165,17 +165,10 @@ export const UpdateProfile = AsyncErrorHandler(
         const user = await prisma.user.update({
             where: { id: userId },
             data,
-            select: {
-                id: true,
-                username: true,
-                email: true,
-                role: true,
+            include: {
                 profile: true,
-                sellerProfile:
-                    websiteLink !== undefined
-                        ? { select: { websiteLink: true } }
-                        : true,
-            },
+                sellerProfile: true
+            }
         });
 
         res.status(200).json({
@@ -293,6 +286,30 @@ export const getUsers = AsyncErrorHandler(
             success: true,
             message: 'Users retrieved successfully',
             data: users,
+        });
+    }
+);
+
+export const getMyProfile = AsyncErrorHandler(
+    async (req: AuthenticatedRequest, res: Response) => {
+        const user = await prisma.user.findUnique({
+            where: {
+                id: req.user?.id,
+            },
+            select: {
+                id: true,
+                username: true,
+                email: true,
+                role: true,
+                profile: true,
+                sellerProfile: true,
+            },
+        });
+
+        res.status(200).json({
+            success: true,
+            message: 'Profile retrieved successfully',
+            data: user,
         });
     }
 );
