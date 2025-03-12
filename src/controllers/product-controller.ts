@@ -282,10 +282,20 @@ export const updateProduct = AsyncErrorHandler(
                 notificationType: 'PRICE_DROP',
                 payload: {
                     productId: product.id,
+                    productName: product.name,
                     oldPrice: oldProduct.price,
                     newPrice: parseFloat(price),
                 },
-            });
+            },
+                {
+                    attempts: 3,
+                    backoff: {
+                        type: 'exponential',
+                        delay: 1000,
+                    },
+                    removeOnFail: true,
+                }
+            );
         }
 
         res.status(200).json({

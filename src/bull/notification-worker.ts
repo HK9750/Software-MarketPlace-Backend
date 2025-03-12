@@ -9,7 +9,7 @@ export const notificationWorker = new Worker(
 
         switch (notificationType) {
             case 'PRICE_DROP': {
-                const { productId, oldPrice, newPrice } = payload;
+                const { productId, oldPrice, newPrice, productName } = payload;
                 const wishlists = await prisma.wishlist.findMany({
                     where: { softwareId: productId },
                     select: { userId: true },
@@ -21,7 +21,7 @@ export const notificationWorker = new Worker(
                         data: userIds.map((userId) => ({
                             userId,
                             softwareId: productId,
-                            message: `The price has dropped from $${oldPrice.toFixed(2)} to $${newPrice.toFixed(2)}!`,
+                            message: `${productName} price has dropped from $${oldPrice.toFixed(2)} to $${newPrice.toFixed(2)}!`,
                             type: 'PRICE_DROP',
                             isRead: false,
                         })),
@@ -38,6 +38,34 @@ export const notificationWorker = new Worker(
     },
     { connection: createClient() }
 );
+
+const cleanupWorker = new Worker(
+    "cleanup",
+    async (job) => {
+        console.log("Running cleanup job: Deleting read notifications older than 30 days...");
+        const thresholdDate = new Date();
+        thresholdDate.setDate(thresholdDate.getDate() - 1);
+
+        const result = await prisma.notification.deleteMany({
+            where: {
+                isRead: true,
+                createdAt: {
+                    lt: thresholdDate,
+                },
+            },
+        });
+        console.log(`Deleted ${result.count} notifications.`);
+    },
+    { connection: createClient() }
+);
+
+cleanupWorker.on("completed", (job) => {
+    console.log(`Cleanup job ${job.id} completed.`);
+});
+
+cleanupWorker.on("failed", (job, err) => {
+    console.error(`Cleanup job ${job?.id} failed:`, err);
+});
 
 notificationWorker.on('completed', (job) => {
     console.log(`Job ${job.id} completed.`);

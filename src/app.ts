@@ -19,6 +19,7 @@ import ReviewRoutes from './routes/review-routes';
 import WishListRoutes from './routes/wishlist-routes';
 import CartRoutes from './routes/cart-routes';
 import OrderRoutes from './routes/order-routes';
+import NotificationRoutes from './routes/notification-routes';
 import SubscriptionRoutes from './routes/subscription-routes';
 import PriceHistoryRoutes from './routes/price-history-routes';
 
@@ -54,6 +55,7 @@ app.use('/api/v1/reviews', ReviewRoutes);
 app.use('/api/v1/wishlist', WishListRoutes);
 app.use('/api/v1/cart', CartRoutes);
 app.use('/api/v1/orders', OrderRoutes);
+app.use('/api/v1/notifications', NotificationRoutes);
 app.use('/api/v1/subscriptions', SubscriptionRoutes);
 app.use('/api/v1/price-history', PriceHistoryRoutes);
 
@@ -64,11 +66,7 @@ app.get('/test', (req: Request, res: Response, next: NextFunction) => {
     });
 });
 
-app.use(function (req: Request, res: Response, next: NextFunction) {
-    const err = new Error('Route not found') as any;
-    err.statusCode = 404;
-    next(err);
-});
+
 
 app.use(errorMiddleware);
 
