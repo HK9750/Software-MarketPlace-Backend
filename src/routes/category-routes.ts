@@ -14,7 +14,7 @@ const router = express.Router();
 
 router.get('/', getAllCategories);
 router.get('/:id', getCategory);
-router.post('/', authenticateUser, authorizeAdmin, createCategory);
+router.post('/create', authenticateUser, authorizeAdmin, createCategory);
 router.put('/:id', authenticateUser, authorizeAdmin, updateCategory);
 
 export default router;
