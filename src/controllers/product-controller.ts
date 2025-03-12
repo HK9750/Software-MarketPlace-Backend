@@ -278,15 +278,17 @@ export const updateProduct = AsyncErrorHandler(
                 },
             });
 
-            await notificationQueue.add('create-notifications', {
-                notificationType: 'PRICE_DROP',
-                payload: {
-                    productId: product.id,
-                    productName: product.name,
-                    oldPrice: oldProduct.price,
-                    newPrice: parseFloat(price),
+            await notificationQueue.add(
+                'create-notifications',
+                {
+                    notificationType: 'PRICE_DROP',
+                    payload: {
+                        productId: product.id,
+                        productName: product.name,
+                        oldPrice: oldProduct.price,
+                        newPrice: parseFloat(price),
+                    },
                 },
-            },
                 {
                     attempts: 3,
                     backoff: {

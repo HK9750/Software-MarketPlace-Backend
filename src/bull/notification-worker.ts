@@ -40,9 +40,11 @@ export const notificationWorker = new Worker(
 );
 
 const cleanupWorker = new Worker(
-    "cleanup",
+    'cleanup',
     async (job) => {
-        console.log("Running cleanup job: Deleting read notifications older than 30 days...");
+        console.log(
+            'Running cleanup job: Deleting read notifications older than 30 days...'
+        );
         const thresholdDate = new Date();
         thresholdDate.setDate(thresholdDate.getDate() - 1);
 
@@ -59,11 +61,11 @@ const cleanupWorker = new Worker(
     { connection: createClient() }
 );
 
-cleanupWorker.on("completed", (job) => {
+cleanupWorker.on('completed', (job) => {
     console.log(`Cleanup job ${job.id} completed.`);
 });
 
-cleanupWorker.on("failed", (job, err) => {
+cleanupWorker.on('failed', (job, err) => {
     console.error(`Cleanup job ${job?.id} failed:`, err);
 });
 

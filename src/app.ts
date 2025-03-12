@@ -66,8 +66,6 @@ app.get('/test', (req: Request, res: Response, next: NextFunction) => {
     });
 });
 
-
-
 app.use(errorMiddleware);
 
 export default app;

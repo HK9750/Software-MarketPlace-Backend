@@ -56,7 +56,7 @@ export const markNotificationAsRead = AsyncErrorHandler(
 );
 
 export const markAllNotificationsAsRead = AsyncErrorHandler(
-    async(req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
         const notifications = await prisma.notification.updateMany({
             where: {
                 userId: req.user.id,
