@@ -23,7 +23,7 @@ export const getCartItems = AsyncErrorHandler(
                         filePath: true,
                     },
                 },
-            }, 
+            },
         });
         res.status(200).json({
             success: true,
@@ -68,10 +68,10 @@ export const addToCart = AsyncErrorHandler(
 export const removeItemFromCart = AsyncErrorHandler(
     async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
         const { softwareId } = req.params;
-        console.log("Software ID: ", softwareId);
+        console.log('Software ID: ', softwareId);
 
         const userId = req.user?.id;
-        console.log("User ID: ", userId);
+        console.log('User ID: ', userId);
         if (!userId) {
             return next(new ErrorHandler('User not authenticated', 401));
         }
@@ -79,7 +79,7 @@ export const removeItemFromCart = AsyncErrorHandler(
         const cartItem = await prisma.cart.findFirst({
             where: { softwareId, userId },
         });
-        console.log("Cart Item: ", cartItem);
+        console.log('Cart Item: ', cartItem);
 
         if (!cartItem) {
             return next(new ErrorHandler('Software not found in cart', 404));

@@ -1,8 +1,8 @@
-import { Request, Response, NextFunction } from "express";
+import { Request, Response, NextFunction } from 'express';
 import AsyncErrorHandler from '../utils/async-handler';
 import ErrorHandler from '../utils/error-handler';
 import prisma from '../lib/prisma';
-import { AuthenticatedRequest } from "./subscription-controller";
+import { AuthenticatedRequest } from './subscription-controller';
 
 export const getUserNotifications = AsyncErrorHandler(
     async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {

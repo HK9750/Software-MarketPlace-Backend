@@ -25,15 +25,15 @@ export const getProfile = AsyncErrorHandler(
         const cartCount = await prisma.cart.count({
             where: {
                 userId: user.id,
-            }
-        })
+            },
+        });
 
         const notifications = await prisma.notification.findMany({
             where: {
-                userId: user.id
-            }, 
+                userId: user.id,
+            },
             orderBy: {
-                createdAt: 'desc'
+                createdAt: 'desc',
             },
             select: {
                 id: true,
@@ -47,8 +47,8 @@ export const getProfile = AsyncErrorHandler(
                         name: true,
                     },
                 },
-            }
-        })
+            },
+        });
 
         const safeUser = exclude(user, ['password']);
 
@@ -58,7 +58,7 @@ export const getProfile = AsyncErrorHandler(
             user: {
                 ...safeUser,
                 cartCount,
-                notifications
+                notifications,
             },
         });
     }

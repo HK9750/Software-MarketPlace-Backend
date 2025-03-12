@@ -5,7 +5,7 @@ import AsyncErrorHandler from '../utils/async-handler';
 import ErrorHandler from '../utils/error-handler';
 
 export interface AuthenticatedRequest extends Request {
-    user: { id: string, role: string };
+    user: { id: string; role: string };
 }
 
 // Create a new subscription plan

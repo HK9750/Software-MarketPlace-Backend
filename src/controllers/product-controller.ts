@@ -239,7 +239,8 @@ export const createProduct = AsyncErrorHandler(
 
 export const updateProduct = AsyncErrorHandler(
     async (req: Request, res: Response, next: NextFunction) => {
-        const { name, description, price, features, requirements, discount } = req.body;
+        const { name, description, price, features, requirements, discount } =
+            req.body;
         const productId = req.params.id;
 
         const oldProduct = await prisma.software.findUnique({
@@ -248,7 +249,7 @@ export const updateProduct = AsyncErrorHandler(
         });
 
         if (!oldProduct) {
-            return next(new ErrorHandler("Product not found", 404));
+            return next(new ErrorHandler('Product not found', 404));
         }
 
         const product = await prisma.software.update({
@@ -264,7 +265,7 @@ export const updateProduct = AsyncErrorHandler(
         });
 
         if (!product) {
-            return next(new ErrorHandler("Product not updated", 400));
+            return next(new ErrorHandler('Product not updated', 400));
         }
 
         if (parseFloat(price) < oldProduct.price) {
@@ -277,9 +278,8 @@ export const updateProduct = AsyncErrorHandler(
                 },
             });
 
-
-            await notificationQueue.add("create-notifications", {
-                notificationType: "PRICE_DROP",
+            await notificationQueue.add('create-notifications', {
+                notificationType: 'PRICE_DROP',
                 payload: {
                     productId: product.id,
                     oldPrice: oldProduct.price,
@@ -290,7 +290,7 @@ export const updateProduct = AsyncErrorHandler(
 
         res.status(200).json({
             success: true,
-            message: "Product updated successfully",
+            message: 'Product updated successfully',
             data: product,
         });
     }
