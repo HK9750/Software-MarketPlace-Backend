@@ -4,9 +4,10 @@ import ErrorHandler from '../utils/error-handler';
 import prisma from '../lib/prisma';
 import { exclude } from '../utils/exclude';
 import { UserRole } from '@prisma/client';
+import { AuthenticatedRequest } from './subscription-controller';
 
 export const getProfile = AsyncErrorHandler(
-    async (req: Request, res: Response, next: NextFunction) => {
+    async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
         const user = await prisma.user.findUnique({
             where: {
                 id: req.user?.id,
@@ -21,18 +22,50 @@ export const getProfile = AsyncErrorHandler(
             return next(new ErrorHandler('User not found', 404));
         }
 
+        const cartCount = await prisma.cart.count({
+            where: {
+                userId: user.id,
+            }
+        })
+
+        const notifications = await prisma.notification.findMany({
+            where: {
+                userId: user.id
+            }, 
+            orderBy: {
+                createdAt: 'desc'
+            },
+            select: {
+                id: true,
+                message: true,
+                type: true,
+                isRead: true,
+                createdAt: true,
+                software: {
+                    select: {
+                        id: true,
+                        name: true,
+                    },
+                },
+            }
+        })
+
         const safeUser = exclude(user, ['password']);
 
         res.status(200).json({
             success: true,
             message: 'Profile retrieved successfully',
-            user: safeUser,
+            user: {
+                ...safeUser,
+                cartCount,
+                notifications
+            },
         });
     }
 );
 
 export const setupProfile = AsyncErrorHandler(
-    async (req: Request, res: Response, next: NextFunction) => {
+    async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
         const { firstName, lastName, phone, address, websiteLink, role } =
             req.body;
         const userId = req.user?.id;
@@ -90,7 +123,7 @@ export const setupProfile = AsyncErrorHandler(
 );
 
 export const UpdateProfile = AsyncErrorHandler(
-    async (req: Request, res: Response, next: NextFunction) => {
+    async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
         const { firstName, lastName, phone, address, websiteLink, role } =
             req.body;
         const userId = req.user?.id;
@@ -153,7 +186,7 @@ export const UpdateProfile = AsyncErrorHandler(
 );
 
 export const getSellerProfile = AsyncErrorHandler(
-    async (req: Request, res: Response, next: NextFunction) => {
+    async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
         const user = await prisma.user.findUnique({
             where: {
                 id: req.params.id,
@@ -186,7 +219,7 @@ export const getSellerProfile = AsyncErrorHandler(
 );
 
 export const VerifySellerProfile = AsyncErrorHandler(
-    async (req: Request, res: Response) => {
+    async (req: AuthenticatedRequest, res: Response) => {
         const { verified } = req.body;
 
         const user = await prisma.user.update({
@@ -222,7 +255,7 @@ export const VerifySellerProfile = AsyncErrorHandler(
 );
 
 export const getUsers = AsyncErrorHandler(
-    async (req: Request, res: Response) => {
+    async (req: AuthenticatedRequest, res: Response) => {
         const { role, verified } = req.query;
         const isVerified =
             verified === 'true'

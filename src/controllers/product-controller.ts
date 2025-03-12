@@ -4,9 +4,11 @@ import ErrorHandler from '../utils/error-handler';
 import prisma from '../lib/prisma';
 import { UploadedFile } from 'express-fileupload';
 import { uploadOnCloudinary } from '../lib/cloudinary';
+import { AuthenticatedRequest } from './subscription-controller';
+import { notificationQueue } from '../bull/notification-queue';
 
 export const getAllProducts = AsyncErrorHandler(
-    async (req: Request, res: Response, next: NextFunction) => {
+    async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
         const { status, category } = req.query;
 
         const products = await prisma.software.findMany({
@@ -86,7 +88,7 @@ export const getAllProducts = AsyncErrorHandler(
 );
 
 export const getProduct = AsyncErrorHandler(
-    async (req: Request, res: Response, next: NextFunction) => {
+    async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
         const product = await prisma.software.findUnique({
             where: {
                 id: req.params.id,
@@ -164,7 +166,7 @@ export const getProduct = AsyncErrorHandler(
 );
 
 export const createProduct = AsyncErrorHandler(
-    async (req: Request, res: Response, next: NextFunction) => {
+    async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
         const {
             name,
             description,
@@ -237,17 +239,24 @@ export const createProduct = AsyncErrorHandler(
 
 export const updateProduct = AsyncErrorHandler(
     async (req: Request, res: Response, next: NextFunction) => {
-        const { name, description, price, features, requirements, discount } =
-            req.body;
+        const { name, description, price, features, requirements, discount } = req.body;
+        const productId = req.params.id;
+
+        const oldProduct = await prisma.software.findUnique({
+            where: { id: productId },
+            select: { price: true },
+        });
+
+        if (!oldProduct) {
+            return next(new ErrorHandler("Product not found", 404));
+        }
 
         const product = await prisma.software.update({
-            where: {
-                id: req.params.id,
-            },
+            where: { id: productId },
             data: {
                 name,
                 description,
-                price,
+                price: parseFloat(price),
                 features,
                 requirements,
                 discount,
@@ -255,19 +264,40 @@ export const updateProduct = AsyncErrorHandler(
         });
 
         if (!product) {
-            return next(new ErrorHandler('Product not updated', 400));
+            return next(new ErrorHandler("Product not updated", 400));
+        }
+
+        if (parseFloat(price) < oldProduct.price) {
+            await prisma.priceHistory.create({
+                data: {
+                    softwareId: product.id,
+                    oldPrice: oldProduct.price,
+                    newPrice: parseFloat(price),
+                    changedAt: new Date(),
+                },
+            });
+
+
+            await notificationQueue.add("create-notifications", {
+                notificationType: "PRICE_DROP",
+                payload: {
+                    productId: product.id,
+                    oldPrice: oldProduct.price,
+                    newPrice: parseFloat(price),
+                },
+            });
         }
 
         res.status(200).json({
             success: true,
-            message: 'Product updated successfully',
+            message: "Product updated successfully",
             data: product,
         });
     }
 );
 
 export const UpdateStatus = AsyncErrorHandler(
-    async (req: Request, res: Response, next: NextFunction) => {
+    async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
         const product = await prisma.software.update({
             where: {
                 id: req.params.id,

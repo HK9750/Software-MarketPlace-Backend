@@ -25,14 +25,14 @@ export const authenticateUser = (
         return next(new ErrorHandler('Not authorized', 401));
     }
 
-    console.log('Token from req.headers is', token);
+    // console.log('Token from req.headers is', token);
 
     try {
         const decoded = jwt.verify(token, config.JWT_ACCESS_SECRET, {
             algorithms: ['HS256'],
             complete: true,
         }) as any;
-        console.log(decoded);
+        // console.log(decoded);
         req.user = decoded.payload;
         next();
     } catch (error: any) {

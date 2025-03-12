@@ -4,8 +4,8 @@ import prisma from '../lib/prisma';
 import AsyncErrorHandler from '../utils/async-handler';
 import ErrorHandler from '../utils/error-handler';
 
-interface AuthenticatedRequest extends Request {
-    user: { id: string };
+export interface AuthenticatedRequest extends Request {
+    user: { id: string, role: string };
 }
 
 // Create a new subscription plan

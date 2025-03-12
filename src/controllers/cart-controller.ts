@@ -2,9 +2,10 @@ import { Request, Response, NextFunction } from 'express';
 import AsyncErrorHandler from '../utils/async-handler';
 import ErrorHandler from '../utils/error-handler';
 import prisma from '../lib/prisma';
+import { AuthenticatedRequest } from './subscription-controller';
 
 export const getCartItems = AsyncErrorHandler(
-    async (req: Request, res: Response, next: NextFunction) => {
+    async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
         const userId = req.user?.id;
         if (!userId) {
             return next(new ErrorHandler('User not authenticated', 401));
@@ -22,7 +23,7 @@ export const getCartItems = AsyncErrorHandler(
                         filePath: true,
                     },
                 },
-            },
+            }, 
         });
         res.status(200).json({
             success: true,
@@ -33,7 +34,7 @@ export const getCartItems = AsyncErrorHandler(
 );
 
 export const addToCart = AsyncErrorHandler(
-    async (req: Request, res: Response, next: NextFunction) => {
+    async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
         const { softwareId } = req.body;
 
         const userId = req.user?.id;
@@ -65,10 +66,12 @@ export const addToCart = AsyncErrorHandler(
 );
 
 export const removeItemFromCart = AsyncErrorHandler(
-    async (req: Request, res: Response, next: NextFunction) => {
+    async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
         const { softwareId } = req.params;
+        console.log("Software ID: ", softwareId);
 
         const userId = req.user?.id;
+        console.log("User ID: ", userId);
         if (!userId) {
             return next(new ErrorHandler('User not authenticated', 401));
         }
@@ -76,6 +79,7 @@ export const removeItemFromCart = AsyncErrorHandler(
         const cartItem = await prisma.cart.findFirst({
             where: { softwareId, userId },
         });
+        console.log("Cart Item: ", cartItem);
 
         if (!cartItem) {
             return next(new ErrorHandler('Software not found in cart', 404));
@@ -93,7 +97,7 @@ export const removeItemFromCart = AsyncErrorHandler(
 );
 
 export const clearCart = AsyncErrorHandler(
-    async (req: Request, res: Response, next: NextFunction) => {
+    async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
         const userId = req.user?.id;
         if (!userId) {
             return next(new ErrorHandler('User not authenticated', 401));
