@@ -15,6 +15,7 @@ export const getProfile = AsyncErrorHandler(
             include: {
                 profile: true,
                 sellerProfile: true,
+                cart: true,
             },
         });
 
