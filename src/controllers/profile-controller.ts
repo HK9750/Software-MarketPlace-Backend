@@ -285,7 +285,7 @@ export const getUsers = AsyncErrorHandler(
         res.status(200).json({
             success: true,
             message: 'Users retrieved successfully',
-            data: users,
+            users,
         });
     }
 );
