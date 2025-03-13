@@ -35,6 +35,7 @@ const config = {
     SMTP_PORT: Number(process.env.SMTP_PORT) || 465,
 
     CLIENT_URL: process.env.CLIENT_URL || 'http://localhost:3000',
+    REDIS_URL: process.env.REDIS_URL || '',
 };
 
 export default config;
