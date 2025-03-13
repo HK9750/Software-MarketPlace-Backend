@@ -16,6 +16,7 @@ export const getProfile = AsyncErrorHandler(
                 profile: true,
                 sellerProfile: true,
                 cart: true,
+                notifications: true,
             },
         });
 
@@ -29,28 +30,6 @@ export const getProfile = AsyncErrorHandler(
             },
         });
 
-        const notifications = await prisma.notification.findMany({
-            where: {
-                userId: user.id,
-            },
-            orderBy: {
-                createdAt: 'desc',
-            },
-            select: {
-                id: true,
-                message: true,
-                type: true,
-                isRead: true,
-                createdAt: true,
-                software: {
-                    select: {
-                        id: true,
-                        name: true,
-                    },
-                },
-            },
-        });
-
         const safeUser = exclude(user, ['password']);
 
         res.status(200).json({
@@ -59,7 +38,6 @@ export const getProfile = AsyncErrorHandler(
             user: {
                 ...safeUser,
                 cartCount,
-                notifications,
             },
         });
     }
