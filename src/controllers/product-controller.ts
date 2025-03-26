@@ -40,20 +40,22 @@ export const getAllProducts = AsyncErrorHandler(
                 // Include wishlist relation filtered by current user, if logged in
                 wishlist: req.user
                     ? {
-                        where: {
-                            userId: req.user.id,
-                        },
-                        select: {
-                            softwareId: true,
-                        },
-                    }
+                          where: {
+                              userId: req.user.id,
+                          },
+                          select: {
+                              softwareId: true,
+                          },
+                      }
                     : undefined,
             },
         });
 
         // Transform each product to add isWishlisted flag and simplify subscriptions field
         const productsWithWishlistFlag = products.map((product) => {
-            const isWishlisted = product.wishlist ? product.wishlist.length > 0 : false;
+            const isWishlisted = product.wishlist
+                ? product.wishlist.length > 0
+                : false;
             // Destructure to remove the wishlist property
             const { wishlist, subscriptions, ...rest } = product;
             return {
@@ -222,10 +224,13 @@ export const createProduct = AsyncErrorHandler(
                     filePath,
                     categoryId,
                     sellerId: sellerProfile.id,
-                }
-            })
+                },
+            });
 
-            if (Array.isArray(subscriptionOptions) && subscriptionOptions.length > 0) {
+            if (
+                Array.isArray(subscriptionOptions) &&
+                subscriptionOptions.length > 0
+            ) {
                 for (const option of subscriptionOptions) {
                     const { subscriptionPlanId, price } = option;
                     await tx.softwareSubscriptionPlan.create({
@@ -233,14 +238,14 @@ export const createProduct = AsyncErrorHandler(
                             softwareId: software.id,
                             subscriptionPlanId,
                             basePrice: price,
-                            price
-                        }
-                    })
+                            price,
+                        },
+                    });
                 }
             }
 
             return software;
-        })
+        });
 
         if (!product) {
             return next(new ErrorHandler('Product not created', 400));
@@ -256,7 +261,8 @@ export const createProduct = AsyncErrorHandler(
 
 export const updateProduct = AsyncErrorHandler(
     async (req: Request, res: Response, next: NextFunction) => {
-        const { name, description, features, requirements, discount } = req.body;
+        const { name, description, features, requirements, discount } =
+            req.body;
         const productId = req.params.id;
 
         // Fetch the existing product
@@ -270,16 +276,17 @@ export const updateProduct = AsyncErrorHandler(
         // Begin a transaction to update product and subscription prices
         const updatedProduct = await prisma.$transaction(async (tx) => {
             // Step 1: Get the lowest subscription price before update
-            const oldLowestSubscription = await tx.softwareSubscriptionPlan.findFirst({
-                where: { softwareId: productId },
-                orderBy: { price: 'asc' },
-                select: {
-                    price: true,
-                    subscriptionPlan: {
-                        select: { name: true },
+            const oldLowestSubscription =
+                await tx.softwareSubscriptionPlan.findFirst({
+                    where: { softwareId: productId },
+                    orderBy: { price: 'asc' },
+                    select: {
+                        price: true,
+                        subscriptionPlan: {
+                            select: { name: true },
+                        },
                     },
-                },
-            });
+                });
 
             // Step 2: Update product details including the discount percentage
             const product = await tx.software.update({
@@ -304,16 +311,17 @@ export const updateProduct = AsyncErrorHandler(
       `;
 
             // Step 3: Fetch the new lowest subscription price after the update
-            const newLowestSubscription = await tx.softwareSubscriptionPlan.findFirst({
-                where: { softwareId: productId },
-                orderBy: { price: 'asc' },
-                select: {
-                    price: true,
-                    subscriptionPlan: {
-                        select: { name: true },
+            const newLowestSubscription =
+                await tx.softwareSubscriptionPlan.findFirst({
+                    where: { softwareId: productId },
+                    orderBy: { price: 'asc' },
+                    select: {
+                        price: true,
+                        subscriptionPlan: {
+                            select: { name: true },
+                        },
                     },
-                },
-            });
+                });
 
             // Step 4: If the new lowest price is lower than the old one, record a price drop and notify
             if (
@@ -340,7 +348,8 @@ export const updateProduct = AsyncErrorHandler(
                             productName: product.name,
                             oldPrice: oldLowestSubscription.price,
                             newPrice: newLowestSubscription.price,
-                            subscriptionPlanName: newLowestSubscription.subscriptionPlan.name,
+                            subscriptionPlanName:
+                                newLowestSubscription.subscriptionPlan.name,
                         },
                     },
                     {

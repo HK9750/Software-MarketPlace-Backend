@@ -67,7 +67,7 @@ export const removeItemFromCart = AsyncErrorHandler(
         }
 
         const cartItem = await prisma.cart.findFirst({
-            where: {  userId },
+            where: { userId },
         });
         console.log('Cart Item: ', cartItem);
 

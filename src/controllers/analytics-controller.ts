@@ -39,7 +39,7 @@ export const getOrdersOverTime = AsyncErrorHandler(
                 new ErrorHandler('Error fetching orders over time', 500)
             );
         }
-    } 
+    }
 );
 
 export const getConversionRate = AsyncErrorHandler(
@@ -104,7 +104,6 @@ export const getProductPerformance = AsyncErrorHandler(
                     id: true,
                     name: true,
                     averageRating: true,
-                   
                 },
             });
 
