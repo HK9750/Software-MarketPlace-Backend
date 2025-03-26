@@ -14,15 +14,6 @@ export const getCartItems = AsyncErrorHandler(
             where: { userId },
             select: {
                 id: true,
-                software: {
-                    select: {
-                        id: true,
-                        name: true,
-                        price: true,
-                        discount: true,
-                        filePath: true,
-                    },
-                },
             },
         });
         res.status(200).json({
@@ -43,24 +34,23 @@ export const addToCart = AsyncErrorHandler(
         }
 
         const existingCartItem = await prisma.cart.findFirst({
-            where: { userId, softwareId },
+            where: { userId },
         });
         if (existingCartItem) {
             return next(new ErrorHandler('Product already in cart', 400));
         }
 
-        const cartItem = await prisma.cart.create({
-            data: {
-                userId,
-                softwareId,
-                quantity: 1,
-            },
-        });
+        // const cartItem = await prisma.cart.create({
+        //     data: {
+        //         userId,
+        //         quantity: 1,
+        //     },
+        // });
 
         res.status(201).json({
             success: true,
             message: 'Product added to cart successfully',
-            data: cartItem,
+            data: [],
         });
     }
 );
@@ -77,7 +67,7 @@ export const removeItemFromCart = AsyncErrorHandler(
         }
 
         const cartItem = await prisma.cart.findFirst({
-            where: { softwareId, userId },
+            where: {  userId },
         });
         console.log('Cart Item: ', cartItem);
 

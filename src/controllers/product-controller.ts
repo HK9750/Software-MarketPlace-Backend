@@ -20,9 +20,6 @@ export const getAllProducts = AsyncErrorHandler(
                 id: true,
                 name: true,
                 description: true,
-                price: true,
-                features: true,
-                requirements: true,
                 filePath: true,
                 category: {
                     select: {
@@ -30,54 +27,42 @@ export const getAllProducts = AsyncErrorHandler(
                         name: true,
                     },
                 },
-                seller: {
-                    select: {
-                        verified: true,
-                        websiteLink: true,
-                        user: {
-                            select: {
-                                id: true,
-                                username: true,
-                                email: true,
-                                profile: {
-                                    select: {
-                                        firstName: true,
-                                        lastName: true,
-                                        phone: true,
-                                    },
-                                },
-                            },
-                        },
-                    },
-                },
                 averageRating: true,
+                subscriptions: {
+                    select: {
+                        price: true,
+                    },
+                    orderBy: {
+                        price: 'asc', // Lowest price first
+                    },
+                    take: 1, // Only need the lowest price
+                },
+                // Include wishlist relation filtered by current user, if logged in
+                wishlist: req.user
+                    ? {
+                        where: {
+                            userId: req.user.id,
+                        },
+                        select: {
+                            softwareId: true,
+                        },
+                    }
+                    : undefined,
             },
         });
 
-        let wishlistSoftwareIds = new Set<string>();
-
-        if (req.user) {
-            const productIds = products.map((product) => product.id);
-
-            const wishlistEntries = await prisma.wishlist.findMany({
-                where: {
-                    userId: req.user.id,
-                    softwareId: { in: productIds },
-                },
-                select: {
-                    softwareId: true,
-                },
-            });
-
-            wishlistEntries.forEach((entry) =>
-                wishlistSoftwareIds.add(entry.softwareId)
-            );
-        }
-
-        const productsWithWishlistFlag = products.map((product) => ({
-            ...product,
-            isWishlisted: wishlistSoftwareIds.has(product.id),
-        }));
+        // Transform each product to add isWishlisted flag and simplify subscriptions field
+        const productsWithWishlistFlag = products.map((product) => {
+            const isWishlisted = product.wishlist ? product.wishlist.length > 0 : false;
+            // Destructure to remove the wishlist property
+            const { wishlist, subscriptions, ...rest } = product;
+            return {
+                ...rest,
+                isWishlisted,
+                // Return the lowest price from subscriptions, if any
+                subscriptions: subscriptions[0]?.price || null,
+            };
+        });
 
         res.status(200).json({
             success: true,
@@ -90,14 +75,11 @@ export const getAllProducts = AsyncErrorHandler(
 export const getProduct = AsyncErrorHandler(
     async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
         const product = await prisma.software.findUnique({
-            where: {
-                id: req.params.id,
-            },
+            where: { id: req.params.id },
             select: {
                 id: true,
                 name: true,
                 description: true,
-                price: true,
                 features: true,
                 requirements: true,
                 filePath: true,
@@ -123,6 +105,17 @@ export const getProduct = AsyncErrorHandler(
                 },
                 reviews: true,
                 averageRating: true,
+                subscriptions: {
+                    select: {
+                        price: true,
+                        basePrice: true,
+                        subscriptionPlan: {
+                            select: {
+                                name: true,
+                            },
+                        },
+                    },
+                },
             },
         });
 
@@ -130,9 +123,9 @@ export const getProduct = AsyncErrorHandler(
             return next(new ErrorHandler('Product not found', 404));
         }
 
+        // Check wishlist and cart status for the logged in user
         let isWishlisted = false;
         let isInCart = false;
-        // console.log('Yahan tk to aya h bhai ')
         if (req.user) {
             const wishlistEntry = await prisma.wishlist.findFirst({
                 where: {
@@ -140,24 +133,29 @@ export const getProduct = AsyncErrorHandler(
                     softwareId: req.params.id,
                 },
             });
-            // console.log("Wishlist Entry", wishlistEntry);
             const cartEntry = await prisma.cart.findFirst({
                 where: {
                     userId: req.user.id,
-                    softwareId: req.params.id,
+                    subscription: { softwareId: req.params.id },
                 },
             });
-            // console.log("Cart Entry", cartEntry);
-
             isWishlisted = Boolean(wishlistEntry);
             isInCart = Boolean(cartEntry);
         }
 
+        // Transform subscriptions to include only price and name
+        const formattedSubscriptions = product.subscriptions.map((sub) => ({
+            price: sub.price,
+            name: sub.subscriptionPlan.name,
+        }));
+
+        // Return the formatted response
         res.status(200).json({
             success: true,
             message: 'Product retrieved successfully',
             data: {
                 ...product,
+                subscriptions: formattedSubscriptions,
                 isWishlisted,
                 isInCart,
             },
@@ -167,15 +165,21 @@ export const getProduct = AsyncErrorHandler(
 
 export const createProduct = AsyncErrorHandler(
     async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+        if (!req.body.data) {
+            return next(new ErrorHandler('Missing product data', 400));
+        }
+
+        // Parse the JSON data string
+        const parsedData = JSON.parse(req.body.data);
+
         const {
             name,
             description,
-            price,
             features,
             requirements,
             categoryId,
-            discount,
-        } = req.body;
+            subscriptionOptions, // Expecting an array
+        } = parsedData;
 
         if (!req.files || !req.files.image) {
             return next(new ErrorHandler('No image file provided', 400));
@@ -207,23 +211,36 @@ export const createProduct = AsyncErrorHandler(
         }
         const filePath = uploadedImage.secure_url;
         console.log(filePath);
-        const product = await prisma.software.create({
-            data: {
-                name,
-                description,
-                price: parseFloat(price),
-                features,
-                requirements,
-                discount: parseFloat(discount),
-                filePath,
-                category: {
-                    connect: { id: categoryId },
-                },
-                seller: {
-                    connect: { id: sellerProfile.id },
-                },
-            },
-        });
+
+        const product = await prisma.$transaction(async (tx) => {
+            const software = await tx.software.create({
+                data: {
+                    name,
+                    description,
+                    features,
+                    requirements,
+                    filePath,
+                    categoryId,
+                    sellerId: sellerProfile.id,
+                }
+            })
+
+            if (Array.isArray(subscriptionOptions) && subscriptionOptions.length > 0) {
+                for (const option of subscriptionOptions) {
+                    const { subscriptionPlanId, price } = option;
+                    await tx.softwareSubscriptionPlan.create({
+                        data: {
+                            softwareId: software.id,
+                            subscriptionPlanId,
+                            basePrice: price,
+                            price
+                        }
+                    })
+                }
+            }
+
+            return software;
+        })
 
         if (!product) {
             return next(new ErrorHandler('Product not created', 400));
@@ -239,71 +256,111 @@ export const createProduct = AsyncErrorHandler(
 
 export const updateProduct = AsyncErrorHandler(
     async (req: Request, res: Response, next: NextFunction) => {
-        const { name, description, price, features, requirements, discount } =
-            req.body;
+        const { name, description, features, requirements, discount } = req.body;
         const productId = req.params.id;
 
+        // Fetch the existing product
         const oldProduct = await prisma.software.findUnique({
             where: { id: productId },
-            select: { price: true },
         });
-
         if (!oldProduct) {
             return next(new ErrorHandler('Product not found', 404));
         }
 
-        const product = await prisma.software.update({
-            where: { id: productId },
-            data: {
-                name,
-                description,
-                price: parseFloat(price),
-                features,
-                requirements,
-                discount,
-            },
-        });
-
-        if (!product) {
-            return next(new ErrorHandler('Product not updated', 400));
-        }
-
-        if (parseFloat(price) < oldProduct.price) {
-            await prisma.priceHistory.create({
-                data: {
-                    softwareId: product.id,
-                    oldPrice: oldProduct.price,
-                    newPrice: parseFloat(price),
-                    changedAt: new Date(),
+        // Begin a transaction to update product and subscription prices
+        const updatedProduct = await prisma.$transaction(async (tx) => {
+            // Step 1: Get the lowest subscription price before update
+            const oldLowestSubscription = await tx.softwareSubscriptionPlan.findFirst({
+                where: { softwareId: productId },
+                orderBy: { price: 'asc' },
+                select: {
+                    price: true,
+                    subscriptionPlan: {
+                        select: { name: true },
+                    },
                 },
             });
 
-            await notificationQueue.add(
-                'create-notifications',
-                {
-                    notificationType: 'PRICE_DROP',
-                    payload: {
-                        productId: product.id,
-                        productName: product.name,
-                        oldPrice: oldProduct.price,
-                        newPrice: parseFloat(price),
+            // Step 2: Update product details including the discount percentage
+            const product = await tx.software.update({
+                where: { id: productId },
+                data: {
+                    name,
+                    description,
+                    features,
+                    requirements,
+                    discount, // discount percentage (e.g., 20 for 20%)
+                },
+            });
+
+            // Calculate discount multiplier: new price = basePrice * (1 - discount/100)
+            const multiplier = 1 - discount / 100;
+
+            // Update all associated subscription prices based on their basePrice
+            await tx.$executeRaw`
+        UPDATE "SoftwareSubscriptionPlan"
+        SET "price" = "basePrice" * ${multiplier}
+        WHERE "softwareId" = ${productId};
+      `;
+
+            // Step 3: Fetch the new lowest subscription price after the update
+            const newLowestSubscription = await tx.softwareSubscriptionPlan.findFirst({
+                where: { softwareId: productId },
+                orderBy: { price: 'asc' },
+                select: {
+                    price: true,
+                    subscriptionPlan: {
+                        select: { name: true },
                     },
                 },
-                {
-                    attempts: 3,
-                    backoff: {
-                        type: 'exponential',
-                        delay: 1000,
+            });
+
+            // Step 4: If the new lowest price is lower than the old one, record a price drop and notify
+            if (
+                oldLowestSubscription &&
+                newLowestSubscription &&
+                newLowestSubscription.price < oldLowestSubscription.price
+            ) {
+                await tx.priceHistory.create({
+                    data: {
+                        softwareId: productId,
+                        oldPrice: oldLowestSubscription.price,
+                        newPrice: newLowestSubscription.price,
+                        changedAt: new Date(),
                     },
-                    removeOnFail: true,
-                }
-            );
-        }
+                });
+
+                // Add a notification job for the price drop
+                await notificationQueue.add(
+                    'create-notifications',
+                    {
+                        notificationType: 'PRICE_DROP',
+                        payload: {
+                            productId: product.id,
+                            productName: product.name,
+                            oldPrice: oldLowestSubscription.price,
+                            newPrice: newLowestSubscription.price,
+                            subscriptionPlanName: newLowestSubscription.subscriptionPlan.name,
+                        },
+                    },
+                    {
+                        attempts: 3,
+                        backoff: {
+                            type: 'exponential',
+                            delay: 1000,
+                        },
+                        removeOnFail: true,
+                    }
+                );
+            }
+
+            return product;
+        });
 
         res.status(200).json({
             success: true,
             message: 'Product updated successfully',
-            data: product,
+            data: updatedProduct.id,
         });
     }
 );

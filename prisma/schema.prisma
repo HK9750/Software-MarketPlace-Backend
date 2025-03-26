@@ -77,35 +77,6 @@ model SellerProfile {
   softwareProducts Software[]
 }
 
-model Software {
-  id              String       @id @default(uuid())
-  name            String
-  description     String
-  price           Float
-  discount        Float
-  features        Json
-  requirements    Json
-  filePath        String
-  categoryId      String?
-  sellerId        String
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
-  status          Int          @default(0) // 0 = PENDING, 1 = ACTIVE, 2 = INACTIVE
-  averageRating   Float        @default(0)
-
-  // Relationships
-  category        Category?     @relation(fields: [categoryId], references: [id])
-  seller          SellerProfile @relation(fields: [sellerId], references: [id])
-  reviews         Review[]
-  wishlist        Wishlist[]
-  cart            Cart[]
-  licenses        LicenseKey[]
-  priceHistory    PriceHistory[]
-  subscriptions   SoftwareSubscriptionPlan[]
-
-  Notification Notification[]
-}
-
 model Category {
   id              String     @id @default(uuid())
   name            String
@@ -115,6 +86,7 @@ model Category {
 
   software        Software[]
 }
+
 
 model LicenseKey {
   id              String     @id @default(uuid())
@@ -130,6 +102,33 @@ model LicenseKey {
   software        Software   @relation(fields: [softwareId], references: [id])
   user            User       @relation(fields: [userId], references: [id])
   orderItem       OrderItem  @relation(fields: [orderItemId], references: [id])
+}
+
+model Software {
+  id              String       @id @default(uuid())
+  name            String
+  description     String
+  discount        Float?
+  features        Json
+  requirements    Json
+  filePath        String
+  categoryId      String?
+  sellerId        String
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  status          Int          @default(0) // 0 = PENDING, 1 = ACTIVE, 2 = INACTIVE
+  averageRating   Float        @default(0)
+
+  // Relationships
+  category        Category?     @relation(fields: [categoryId], references: [id])
+  seller          SellerProfile @relation(fields: [sellerId], references: [id])
+  reviews         Review[]
+  wishlist        Wishlist[]
+  licenses        LicenseKey[]
+  priceHistory    PriceHistory[]
+  subscriptions   SoftwareSubscriptionPlan[]
+
+  Notification Notification[]
 }
 
 model Order {
@@ -151,7 +150,7 @@ model Order {
 model OrderItem {
   id              String     @id @default(uuid())
   orderId         String
-  subscriptionId  String?  // Nullable if not a subscription
+  subscriptionId  String  
   price           Float
   status          SubscriptionStatus @default(ACTIVE) // Tracks subscription status
 
@@ -164,26 +163,16 @@ model OrderItem {
 model Cart {
   id              String     @id @default(uuid())
   userId          String
-  softwareId      String
+  subscriptionId  String     // Required: which subscription option was chosen for this software
   quantity        Int        @default(1)
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt
 
   // Relationships
-  user            User       @relation(fields: [userId], references: [id])
-  software        Software   @relation(fields: [softwareId], references: [id])
+  user            User                        @relation(fields: [userId], references: [id])
+  subscription    SoftwareSubscriptionPlan    @relation(fields: [subscriptionId], references: [id])
 }
 
-model Wishlist {
-  id              String     @id @default(uuid())
-  userId          String
-  softwareId      String
-  createdAt       DateTime   @default(now())
-
-  // Relationships
-  user            User       @relation(fields: [userId], references: [id])
-  software        Software   @relation(fields: [softwareId], references: [id])
-}
 
 model SubscriptionPlan {
   id              String       @id @default(uuid())
@@ -200,6 +189,7 @@ model SoftwareSubscriptionPlan {
   id                  String     @id @default(uuid())
   softwareId          String
   subscriptionPlanId  String
+  basePrice           Float? 
   price               Float
   status              SubscriptionStatus @default(ACTIVE) // Status tracking
   createdAt           DateTime   @default(now())
@@ -208,6 +198,7 @@ model SoftwareSubscriptionPlan {
   software           Software          @relation(fields: [softwareId], references: [id])
   subscriptionPlan   SubscriptionPlan  @relation(fields: [subscriptionPlanId], references: [id])
   orderItems         OrderItem[]       // Added opposite relation field
+  carts              Cart[]            // Added opposite relation field
 
   @@unique([softwareId, subscriptionPlanId]) 
 }
@@ -253,6 +244,17 @@ model Notification {
   // Relationships
   user            User             @relation(fields: [userId], references: [id])
   software        Software?        @relation(fields: [softwareId], references: [id])
+}
+
+model Wishlist {
+  id              String     @id @default(uuid())
+  userId          String
+  softwareId      String
+  createdAt       DateTime   @default(now())
+
+  // Relationships
+  user            User       @relation(fields: [userId], references: [id])
+  software        Software   @relation(fields: [softwareId], references: [id])
 }
 
 model PriceHistory {

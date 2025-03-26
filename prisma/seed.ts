@@ -15,11 +15,20 @@ async function seedSuperAdmin() {
                     username: 'superadmin',
                     password: hashedPassword,
                     role: 'ADMIN',
+                    profile: {
+                        create: {
+                            firstName: 'Super',
+                            lastName: 'Admin',
+                            address: '123 Admin Street',
+                            phone: '1234567890',
+
+                        },
+                    }
                 },
             });
             console.log(superAdmin);
 
-            const { accessToken, refreshToken } = generateTokens(superAdmin.id);
+            const { accessToken, refreshToken } = generateTokens(superAdmin.id, superAdmin.role);
             console.log('🔑 Access Token:', accessToken);
             console.log('🔑 Refresh Token:', refreshToken);
 
