@@ -36,7 +36,7 @@ export const updateSubscriptionPlan = AsyncErrorHandler(
         const planId = req.params.id;
         const { name, duration } = req.body;
 
-        if (!planId) { 
+        if (!planId) {
             return next(new ErrorHandler('Plan ID is required', 400));
         }
 
@@ -52,13 +52,13 @@ export const updateSubscriptionPlan = AsyncErrorHandler(
 export const getMySubscriptions = AsyncErrorHandler(
     async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
         if (!req.user) {
-            return next(new ErrorHandler("Unauthorized", 401));
+            return next(new ErrorHandler('Unauthorized', 401));
         }
 
         const userId = req.user.id;
 
         const subscriptions = await prisma.licenseKey.findMany({
-            where: { userId }, 
+            where: { userId },
             select: {
                 id: true,
                 key: true,
@@ -79,11 +79,11 @@ export const getMySubscriptions = AsyncErrorHandler(
                                 name: true,
                                 description: true,
                             },
-                        }
-                    }
-                }
-            }
-        })
+                        },
+                    },
+                },
+            },
+        });
 
         res.status(200).json({
             success: true,

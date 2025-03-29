@@ -21,7 +21,7 @@ import CartRoutes from './routes/cart-routes';
 import OrderRoutes from './routes/order-routes';
 import NotificationRoutes from './routes/notification-routes';
 import SubscriptionRoutes from './routes/subscription-routes';
-import PriceHistoryRoutes from './routes/price-history-routes'; 
+import PriceHistoryRoutes from './routes/price-history-routes';
 import AnalyticsRoutes from './routes/analytics-routes';
 
 dotenv.config();

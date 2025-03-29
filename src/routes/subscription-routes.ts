@@ -24,6 +24,4 @@ router.patch(
 
 router.get('/me', authenticateUser, getMySubscriptions);
 
-
-
 export default router;
