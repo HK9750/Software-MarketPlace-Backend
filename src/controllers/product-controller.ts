@@ -109,11 +109,13 @@ export const getProduct = AsyncErrorHandler(
                 averageRating: true,
                 subscriptions: {
                     select: {
+                        id: true,
                         price: true,
                         basePrice: true,
                         subscriptionPlan: {
                             select: {
                                 name: true,
+                                duration: true,
                             },
                         },
                     },
@@ -147,8 +149,11 @@ export const getProduct = AsyncErrorHandler(
 
         // Transform subscriptions to include only price and name
         const formattedSubscriptions = product.subscriptions.map((sub) => ({
+            id: sub.id,
+            basePrice: sub.basePrice, 
             price: sub.price,
             name: sub.subscriptionPlan.name,
+            duration: sub.subscriptionPlan.duration,
         }));
 
         // Return the formatted response
