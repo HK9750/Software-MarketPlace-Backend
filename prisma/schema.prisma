@@ -87,22 +87,20 @@ model Category {
   software        Software[]
 }
 
-
-model LicenseKey {
+model Cart {
   id              String     @id @default(uuid())
-  key             String     @unique
-  softwareId      String
   userId          String
-  orderItemId     String
-  validUntil      DateTime
+  subscriptionId  String     // Required: which subscription option was chosen for this software
+  quantity        Int        @default(1)
   createdAt       DateTime   @default(now())
-  isExpired       Boolean    @default(false)
+  updatedAt       DateTime   @updatedAt
 
   // Relationships
-  software        Software   @relation(fields: [softwareId], references: [id])
-  user            User       @relation(fields: [userId], references: [id])
-  orderItem       OrderItem  @relation(fields: [orderItemId], references: [id])
+  user            User                        @relation(fields: [userId], references: [id])
+  subscription    SoftwareSubscriptionPlan    @relation(fields: [subscriptionId], references: [id])
 }
+
+
 
 model Software {
   id              String       @id @default(uuid())
@@ -124,11 +122,26 @@ model Software {
   seller          SellerProfile @relation(fields: [sellerId], references: [id])
   reviews         Review[]
   wishlist        Wishlist[]
-  licenses        LicenseKey[]
   priceHistory    PriceHistory[]
   subscriptions   SoftwareSubscriptionPlan[]
 
   Notification Notification[]
+}
+
+model LicenseKey {
+  id              String     @id @default(uuid())
+  key             String     @unique
+  softwareSubscriptionId      String
+  userId          String
+  validUntil      DateTime
+  createdAt       DateTime   @default(now())
+  isExpired       Boolean    @default(false)
+  isActive        Boolean    @default(true) 
+  redeemedAt      DateTime?  // Optional: when the user first activated the key
+
+  // Relationships
+  subscription        SoftwareSubscriptionPlan   @relation(fields: [softwareSubscriptionId], references: [id])
+  user            User       @relation(fields: [userId], references: [id])
 }
 
 model Order {
@@ -157,20 +170,6 @@ model OrderItem {
   // Relationships
   order           Order      @relation(fields: [orderId], references: [id])
   subscription    SoftwareSubscriptionPlan? @relation(fields: [subscriptionId], references: [id])
-  LicenseKey      LicenseKey[]
-}
-
-model Cart {
-  id              String     @id @default(uuid())
-  userId          String
-  subscriptionId  String     // Required: which subscription option was chosen for this software
-  quantity        Int        @default(1)
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @updatedAt
-
-  // Relationships
-  user            User                        @relation(fields: [userId], references: [id])
-  subscription    SoftwareSubscriptionPlan    @relation(fields: [subscriptionId], references: [id])
 }
 
 
@@ -197,6 +196,7 @@ model SoftwareSubscriptionPlan {
   // Relationships
   software           Software          @relation(fields: [softwareId], references: [id])
   subscriptionPlan   SubscriptionPlan  @relation(fields: [subscriptionPlanId], references: [id])
+  licenses        LicenseKey[]
   orderItems         OrderItem[]       // Added opposite relation field
   carts              Cart[]            // Added opposite relation field
 

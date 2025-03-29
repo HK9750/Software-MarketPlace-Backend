@@ -2,6 +2,8 @@ import express from 'express';
 import {
     getSubscriptionPlans,
     createSubscriptionPlan,
+    updateSubscriptionPlan,
+    getMySubscriptions,
 } from '../controllers/subscription-controller';
 import {
     authenticateUser,
@@ -13,22 +15,15 @@ const router = express.Router();
 
 router.post('/plan', authenticateUser, authorizeAdmin, createSubscriptionPlan);
 router.get('/plans', authenticateUser, getSubscriptionPlans);
+router.patch(
+    '/plan/:id',
+    authenticateUser,
+    authorizeAdmin,
+    updateSubscriptionPlan
+);
 
-// router.get('/plan/:id', authenticateUser, getSubscriptionPlan);
-// router.get('/user', authenticateUser, getUserSubscription);
-// router.post('/subscribe', authenticateUser, subscribeToPlan);
-// router.patch(
-//     '/plan/:id',
-//     authenticateUser,
-//     authorizeAdmin,
-//     updateSubscriptionPlan
-// );
-// router.delete(
-//     '/plan/:id',
-//     authenticateUser,
-//     authorizeAdmin,
-//     deleteSubscriptionPlan
-// );
-// router.delete('/cancel', authenticateUser, cancelSubscription);
+router.get('/me', authenticateUser, getMySubscriptions);
+
+
 
 export default router;
