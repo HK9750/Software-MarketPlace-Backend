@@ -2,9 +2,10 @@ import { Request, Response, NextFunction } from 'express';
 import AsyncErrorHandler from '../utils/async-handler';
 import ErrorHandler from '../utils/error-handler';
 import prisma from '../lib/prisma';
+import { AuthenticatedRequest } from './subscription-controller';
 
 export const AddReview = AsyncErrorHandler(
-    async (req: Request, res: Response, next: NextFunction) => {
+    async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
         const { rating, comment, softwareId } = req.body;
 
         if (!rating || !comment) {
@@ -19,7 +20,7 @@ export const AddReview = AsyncErrorHandler(
         }
 
         const license = await prisma.licenseKey.findFirst({
-            where: { userId, softwareId },
+            where: { userId, subscription: { softwareId }, isActive: true },
         });
         if (!license) {
             return next(
@@ -96,7 +97,7 @@ export const GetProductReviews = AsyncErrorHandler(
 );
 
 export const DeleteReview = AsyncErrorHandler(
-    async (req: Request, res: Response, next: NextFunction) => {
+    async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
         const review = await prisma.review.findFirst({
             where: {
                 id: req.params.id as string,
