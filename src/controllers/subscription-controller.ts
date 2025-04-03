@@ -31,6 +31,42 @@ export const getSubscriptionPlans = AsyncErrorHandler(
     }
 );
 
+export const getSubscriptionPlanById = AsyncErrorHandler(
+    async (req: Request, res: Response, next: NextFunction) => {
+        const planId = req.params.id;
+
+        if (!planId) {
+            return next(new ErrorHandler('Plan ID is required', 400));
+        }
+
+        const plan = await prisma.subscriptionPlan.findUnique({
+            where: { id: planId },
+        });
+
+        if (!plan) {
+            return next(new ErrorHandler('Plan not found', 404));
+        }
+
+        res.status(200).json({ success: true, data: plan });
+    }
+);
+
+export const deleteSubscriptionPlan = AsyncErrorHandler(
+    async (req: Request, res: Response, next: NextFunction) => {
+        const planId = req.params.id;
+
+        if (!planId) {
+            return next(new ErrorHandler('Plan ID is required', 400));
+        }
+
+        const plan = await prisma.subscriptionPlan.delete({
+            where: { id: planId },
+        });
+
+        res.status(200).json({ success: true, data: plan });
+    }
+);
+
 export const updateSubscriptionPlan = AsyncErrorHandler(
     async (req: Request, res: Response, next: NextFunction) => {
         const planId = req.params.id;

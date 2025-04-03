@@ -4,6 +4,8 @@ import {
     createSubscriptionPlan,
     updateSubscriptionPlan,
     getMySubscriptions,
+    getSubscriptionPlanById,
+    deleteSubscriptionPlan,
 } from '../controllers/subscription-controller';
 import {
     authenticateUser,
@@ -13,13 +15,25 @@ import {
 
 const router = express.Router();
 
-router.post('/plan', authenticateUser, authorizeAdmin, createSubscriptionPlan);
+router.post(
+    '/plan/create',
+    authenticateUser,
+    authorizeAdmin,
+    createSubscriptionPlan
+);
 router.get('/plans', authenticateUser, getSubscriptionPlans);
+router.get('/plan/:id', authenticateUser, getSubscriptionPlanById);
 router.patch(
     '/plan/:id',
     authenticateUser,
     authorizeAdmin,
     updateSubscriptionPlan
+);
+router.delete(
+    '/plan/:id',
+    authenticateUser,
+    authorizeAdmin,
+    deleteSubscriptionPlan
 );
 
 router.get('/me', authenticateUser, getMySubscriptions);
