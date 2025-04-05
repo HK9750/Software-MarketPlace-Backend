@@ -2,23 +2,20 @@
 import express from 'express';
 import {
     getConversionRate,
+    getDashboardSummary,
     getOrdersOverTime,
     getProductPerformance,
     getUserSignups,
+    invalidateAnalyticsCache,
 } from '../controllers/analytics-controller';
 
 const router = express.Router();
 
-// Route for orders over time analytics
-router.get('/orders-over-time', getOrdersOverTime);
-
-// Route for conversion rate analytics
+router.get('/dashboard-summary', getDashboardSummary);
 router.get('/conversion-rate', getConversionRate);
-
-// Route for user signups analytics
 router.get('/user-signups', getUserSignups);
-
-// Route for product performance analytics
+router.get('/orders-over-time', getOrdersOverTime);
 router.get('/product-performance', getProductPerformance);
+router.post('/invalidate-cache', invalidateAnalyticsCache);
 
 export default router;
