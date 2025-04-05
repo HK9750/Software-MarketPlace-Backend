@@ -23,6 +23,7 @@ import NotificationRoutes from './routes/notification-routes';
 import SubscriptionRoutes from './routes/subscription-routes';
 import PriceHistoryRoutes from './routes/price-history-routes';
 import AnalyticsRoutes from './routes/analytics-routes';
+import DashboardRoutes from './routes/dashboard-routes';
 
 dotenv.config();
 
@@ -60,6 +61,7 @@ app.use('/api/v1/notifications', NotificationRoutes);
 app.use('/api/v1/subscriptions', SubscriptionRoutes);
 app.use('/api/v1/price-history', PriceHistoryRoutes);
 app.use('/api/v1/analytics', AnalyticsRoutes);
+app.use('/api/v1/dashboard', DashboardRoutes);
 
 app.get('/test', (req: Request, res: Response, next: NextFunction) => {
     res.status(200).json({
