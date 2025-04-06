@@ -21,6 +21,16 @@ export const getAllProducts = AsyncErrorHandler(
                 name: true,
                 description: true,
                 filePath: true,
+                seller: {
+                    select: {
+                        user: {
+                            select: {
+                                id: true,
+                                username: true,
+                            },
+                        },
+                    },
+                },
                 category: {
                     select: {
                         id: true,
