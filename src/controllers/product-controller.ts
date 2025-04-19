@@ -6,6 +6,8 @@ import { UploadedFile } from 'express-fileupload';
 import { uploadOnCloudinary } from '../lib/cloudinary';
 import { AuthenticatedRequest } from './subscription-controller';
 import { notificationQueue } from '../bull/notification-queue';
+import path from 'path';
+import fs from 'fs';
 
 export const getAllProducts = AsyncErrorHandler(
     async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
@@ -43,11 +45,10 @@ export const getAllProducts = AsyncErrorHandler(
                         price: true,
                     },
                     orderBy: {
-                        price: 'asc', // Lowest price first
+                        price: 'asc',
                     },
-                    take: 1, // Only need the lowest price
+                    take: 1,
                 },
-                // Include wishlist relation filtered by current user, if logged in
                 wishlist: req.user
                     ? {
                           where: {
@@ -61,17 +62,14 @@ export const getAllProducts = AsyncErrorHandler(
             },
         });
 
-        // Transform each product to add isWishlisted flag and simplify subscriptions field
         const productsWithWishlistFlag = products.map((product) => {
             const isWishlisted = product.wishlist
                 ? product.wishlist.length > 0
                 : false;
-            // Destructure to remove the wishlist property
             const { wishlist, subscriptions, ...rest } = product;
             return {
                 ...rest,
                 isWishlisted,
-                // Return the lowest price from subscriptions, if any
                 subscriptions: subscriptions[0]?.price || null,
             };
         });
@@ -84,6 +82,88 @@ export const getAllProducts = AsyncErrorHandler(
     }
 );
 
+export const getAllProductsBySeller = AsyncErrorHandler(
+    async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+        const { id } = req.params;
+        const sellerProfile = await prisma.sellerProfile.findFirst({
+            where: { userId: req.user?.id },
+            select: { id: true },
+        });
+        if (!sellerProfile) {
+            return next(
+                new ErrorHandler(
+                    'Seller profile not found. Please complete your seller profile first.',
+                    400
+                )
+            );
+        }
+        const products = await prisma.software.findMany({
+            where: {
+                sellerId: sellerProfile.id,
+            },
+            select: {
+                id: true,
+                name: true,
+                description: true,
+                filePath: true,
+                seller: {
+                    select: {
+                        user: {
+                            select: {
+                                id: true,
+                                username: true,
+                            },
+                        },
+                    },
+                },
+                category: {
+                    select: {
+                        id: true,
+                        name: true,
+                    },
+                },
+                averageRating: true,
+                subscriptions: {
+                    select: {
+                        price: true,
+                    },
+                    orderBy: {
+                        price: 'asc',
+                    },
+                    take: 1,
+                },
+                wishlist: req.user
+                    ? {
+                          where: {
+                              userId: req.user.id,
+                          },
+                          select: {
+                              softwareId: true,
+                          },
+                      }
+                    : undefined,
+            },
+        });
+
+        const productsWithWishlistFlag = products.map((product) => {
+            const isWishlisted = product.wishlist
+                ? product.wishlist.length > 0
+                : false;
+            const { wishlist, subscriptions, ...rest } = product;
+            return {
+                ...rest,
+                isWishlisted,
+                subscriptions: subscriptions[0]?.price || null,
+            };
+        });
+
+        res.status(200).json({
+            success: true,
+            message: 'Products retrieved successfully',
+            products: productsWithWishlistFlag,
+        });
+    }
+);
 export const getProduct = AsyncErrorHandler(
     async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
         const product = await prisma.software.findUnique({
@@ -218,14 +298,29 @@ export const createProduct = AsyncErrorHandler(
             );
         }
 
-        const tempPath = `./public/temp/${file.name}`;
+        // Create a temp folder if it doesn't exist
+        const tempDir = path.join(__dirname, '../public/temp');
+        if (!fs.existsSync(tempDir)) {
+            fs.mkdirSync(tempDir, { recursive: true });
+        }
 
+        // Use absolute path for file saving
+        const tempPath = path.join(tempDir, file.name);
+
+        // Move uploaded file to temp path
         await file.mv(tempPath);
 
+        // Upload to Cloudinary
         const uploadedImage = await uploadOnCloudinary(tempPath);
         if (!uploadedImage) {
             return next(new ErrorHandler('Image upload failed', 500));
         }
+
+        // Optional: delete temp file
+        fs.unlink(tempPath, (err) => {
+            if (err) console.error('Failed to delete temp file:', err);
+        });
+
         const filePath = uploadedImage.secure_url;
         console.log(filePath);
 
@@ -280,17 +375,18 @@ export const updateProduct = AsyncErrorHandler(
             req.body;
         const productId = req.params.id;
 
-        // Fetch the existing product
+        // Ensure the product exists
         const oldProduct = await prisma.software.findUnique({
             where: { id: productId },
         });
+
         if (!oldProduct) {
             return next(new ErrorHandler('Product not found', 404));
         }
 
-        // Begin a transaction to update product and subscription prices
+        // Start a transaction
         const updatedProduct = await prisma.$transaction(async (tx) => {
-            // Step 1: Get the lowest subscription price before update
+            // Step 1: Get the current lowest subscription price
             const oldLowestSubscription =
                 await tx.softwareSubscriptionPlan.findFirst({
                     where: { softwareId: productId },
@@ -303,29 +399,34 @@ export const updateProduct = AsyncErrorHandler(
                     },
                 });
 
-            // Step 2: Update product details including the discount percentage
+            // Step 2: Update the software with any provided fields
             const product = await tx.software.update({
                 where: { id: productId },
                 data: {
-                    name,
-                    description,
-                    features,
-                    requirements,
-                    discount, // discount percentage (e.g., 20 for 20%)
+                    ...(name && { name }),
+                    ...(description && { description }),
+                    ...(features && { features }),
+                    ...(requirements && { requirements }),
+                    ...(typeof discount === 'number' && { discount }),
                 },
             });
 
-            // Calculate discount multiplier: new price = basePrice * (1 - discount/100)
-            const multiplier = 1 - discount / 100;
+            // Step 3: Recalculate prices if discount is provided
+            if (
+                typeof discount === 'number' &&
+                discount >= 0 &&
+                discount <= 100
+            ) {
+                const multiplier = 1 - discount / 100;
 
-            // Update all associated subscription prices based on their basePrice
-            await tx.$executeRaw`
-        UPDATE "SoftwareSubscriptionPlan"
-        SET "price" = "basePrice" * ${multiplier}
-        WHERE "softwareId" = ${productId};
-      `;
+                await tx.$executeRawUnsafe(`
+                    UPDATE "SoftwareSubscriptionPlan"
+                    SET "price" = "basePrice" * ${multiplier}
+                    WHERE "softwareId" = '${productId}'
+                `);
+            }
 
-            // Step 3: Fetch the new lowest subscription price after the update
+            // Step 4: Get new lowest subscription price
             const newLowestSubscription =
                 await tx.softwareSubscriptionPlan.findFirst({
                     where: { softwareId: productId },
@@ -338,7 +439,7 @@ export const updateProduct = AsyncErrorHandler(
                     },
                 });
 
-            // Step 4: If the new lowest price is lower than the old one, record a price drop and notify
+            // Step 5: If new price is lower, log history and queue notification
             if (
                 oldLowestSubscription &&
                 newLowestSubscription &&
@@ -353,7 +454,6 @@ export const updateProduct = AsyncErrorHandler(
                     },
                 });
 
-                // Add a notification job for the price drop
                 await notificationQueue.add(
                     'create-notifications',
                     {

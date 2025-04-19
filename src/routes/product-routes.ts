@@ -2,6 +2,7 @@ import express from 'express';
 import {
     createProduct,
     getAllProducts,
+    getAllProductsBySeller,
     getProduct,
     updateProduct,
     UpdateStatus,
@@ -25,6 +26,12 @@ router.put(
 );
 
 router.get('/', authenticateUser, getAllProducts);
+router.get(
+    '/seller/:id',
+    authenticateUser,
+    authorizeSellerOrAdmin,
+    getAllProductsBySeller
+);
 router.get('/:id', authenticateUser, getProduct);
 
 export default router;
