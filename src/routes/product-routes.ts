@@ -4,6 +4,7 @@ import {
     getAllProducts,
     getAllProductsBySeller,
     getProduct,
+    getProductsForHomepage,
     updateProduct,
     UpdateStatus,
 } from '../controllers/product-controller';
@@ -33,5 +34,6 @@ router.get(
     getAllProductsBySeller
 );
 router.get('/:id', authenticateUser, getProduct);
+router.get('/homepage/filter', getProductsForHomepage);
 
 export default router;

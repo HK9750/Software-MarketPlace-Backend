@@ -8,6 +8,9 @@ import { AuthenticatedRequest } from './subscription-controller';
 import { notificationQueue } from '../bull/notification-queue';
 import path from 'path';
 import fs from 'fs';
+import { createClient } from '../lib/redis-client';
+
+const redisClient = createClient();
 
 export const getAllProducts = AsyncErrorHandler(
     async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
@@ -508,6 +511,132 @@ export const UpdateStatus = AsyncErrorHandler(
             success: true,
             message: 'Product approved successfully',
             data: product,
+        });
+    }
+);
+
+export const getProductsForHomepage = AsyncErrorHandler(
+    async (req: Request, res: Response, next: NextFunction) => {
+        const cacheKey = 'homepage_products';
+        const cached = await redisClient.get(cacheKey);
+        if (cached) {
+            return res.status(200).json({
+                success: true,
+                message: 'Products retrieved successfully (from cache)',
+                softwares: JSON.parse(cached),
+            });
+        }
+
+        // Fire all three queries in parallel
+        const [popularRaw, trendingHistories, bestSellerRaw] =
+            await Promise.all([
+                // 1) Popular: top 4 by rating
+                prisma.software.findMany({
+                    where: { status: 1 },
+                    orderBy: { averageRating: 'desc' },
+                    take: 4,
+                    select: {
+                        id: true,
+                        name: true,
+                        description: true,
+                        filePath: true,
+                        averageRating: true,
+                        priceHistory: {
+                            orderBy: { changedAt: 'desc' },
+                            take: 1,
+                            select: { newPrice: true },
+                        },
+                    },
+                }),
+
+                // 2) Trending: 4 most-recent price drops
+                prisma.priceHistory.findMany({
+                    where: {
+                        newPrice: { lt: prisma.priceHistory.fields.oldPrice },
+                    },
+                    orderBy: { changedAt: 'desc' },
+                    take: 4,
+                    include: {
+                        software: {
+                            select: {
+                                id: true,
+                                name: true,
+                                description: true,
+                                filePath: true,
+                                averageRating: true,
+                            },
+                        },
+                    },
+                }),
+
+                // 3) Best Sellers: top 4 by subscription count
+                prisma.software.findMany({
+                    where: { status: 1 },
+                    orderBy: { subscriptions: { _count: 'desc' } },
+                    take: 4,
+                    select: {
+                        id: true,
+                        name: true,
+                        description: true,
+                        filePath: true,
+                        averageRating: true,
+                        priceHistory: {
+                            orderBy: { changedAt: 'desc' },
+                            take: 1,
+                            select: { newPrice: true },
+                        },
+                    },
+                }),
+            ]);
+
+        // Map into the shapes your frontend expects:
+        const popular = popularRaw.map((p) => ({
+            id: p.id,
+            name: p.name,
+            description: p.description,
+            filePath: p.filePath,
+            rating: p.averageRating,
+            latestPrice: p.priceHistory[0]?.newPrice ?? null,
+            type: 'popular' as const,
+        }));
+
+        const trending = trendingHistories.map((h) => ({
+            id: h.software.id,
+            name: h.software.name,
+            description: h.software.description,
+            filePath: h.software.filePath,
+            rating: h.software.averageRating,
+            latestPrice: h.newPrice,
+            type: 'trending' as const,
+        }));
+
+        const bestSellers = bestSellerRaw.map((p) => ({
+            id: p.id,
+            name: p.name,
+            description: p.description,
+            filePath: p.filePath,
+            rating: p.averageRating,
+            latestPrice: p.priceHistory[0]?.newPrice ?? null,
+            type: 'bestseller' as const,
+        }));
+
+        const softwares = { popular, trending, bestSellers };
+        const hasAny =
+            popular.length + trending.length + bestSellers.length > 0;
+
+        if (hasAny) {
+            // cache for 24 hrs
+            await redisClient.setex(
+                cacheKey,
+                60 * 60 * 24,
+                JSON.stringify(softwares)
+            );
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: 'Products retrieved successfully',
+            softwares,
         });
     }
 );
