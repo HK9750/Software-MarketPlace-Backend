@@ -24,6 +24,7 @@ import SubscriptionRoutes from './routes/subscription-routes';
 import PriceHistoryRoutes from './routes/price-history-routes';
 import AnalyticsRoutes from './routes/analytics-routes';
 import DashboardRoutes from './routes/dashboard-routes';
+import PaymentRoutes from './routes/payment-routes';
 
 dotenv.config();
 
@@ -62,6 +63,7 @@ app.use('/api/v1/subscriptions', SubscriptionRoutes);
 app.use('/api/v1/price-history', PriceHistoryRoutes);
 app.use('/api/v1/analytics', AnalyticsRoutes);
 app.use('/api/v1/dashboard', DashboardRoutes);
+app.use('/api/v1/payments', PaymentRoutes);
 
 app.get('/test', (req: Request, res: Response, next: NextFunction) => {
     res.status(200).json({
