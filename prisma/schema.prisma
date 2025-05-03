@@ -21,7 +21,7 @@ enum OrderStatus {
 }
 
 enum SubscriptionStatus {
-  ACTIVE 
+  ACTIVE
   CANCELED
   EXPIRED
   PAUSED
@@ -35,244 +35,242 @@ enum NotificationType {
 }
 
 model User {
-  id              String           @id @default(uuid())
-  username        String           @unique
-  email           String           @unique
-  password        String
-  role            UserRole         @default(CUSTOMER)
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
-  isSocial        Boolean          @default(false)
+  id        String   @id @default(uuid())
+  username  String   @unique
+  email     String   @unique
+  password  String
+  role      UserRole @default(CUSTOMER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  isSocial  Boolean  @default(false)
 
   // Relationships
-  profile         Profile?
-  cart            Cart[]
-  wishlist        Wishlist[]
-  orders          Order[]
-  payments        Payment[]
-  reviews         Review[]
-  notifications   Notification[]
-  licenses        LicenseKey[]
-  sellerProfile   SellerProfile?
+  profile       Profile?
+  cart          Cart[]
+  wishlist      Wishlist[]
+  orders        Order[]
+  payments      Payment[]
+  reviews       Review[]
+  notifications Notification[]
+  licenses      LicenseKey[]
+  sellerProfile SellerProfile?
 
   UserOrderHistory UserOrderHistory[]
 }
 
 model Profile {
-  id          String   @id @default(uuid())
-  firstName   String
-  lastName    String
-  phone       String?
-  address     Json?
-  userId      String   @unique
-  user        User     @relation(fields: [userId], references: [id])
+  id        String  @id @default(uuid())
+  firstName String
+  lastName  String
+  avatar    String?
+  phone     String?
+  address   Json?
+  userId    String  @unique
+  user      User    @relation(fields: [userId], references: [id])
 }
 
 model SellerProfile {
-  id              String     @id @default(uuid())
-  verified        Boolean    @default(false)
-  websiteLink     String  
-  userId          String     @unique
-  user            User       @relation(fields: [userId], references: [id])
+  id               String     @id @default(uuid())
+  verified         Boolean    @default(false)
+  websiteLink      String
+  userId           String     @unique
+  user             User       @relation(fields: [userId], references: [id])
   softwareProducts Software[]
 }
 
 model Category {
-  id              String     @id @default(uuid())
-  name            String
-  description     String?
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @updatedAt
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  software        Software[]
+  software Software[]
 }
 
 model Cart {
-  id              String     @id @default(uuid())
-  userId          String
-  subscriptionId  String     // Required: which subscription option was chosen for this software
-  quantity        Int        @default(1)
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @updatedAt
+  id             String   @id @default(uuid())
+  userId         String
+  subscriptionId String // Required: which subscription option was chosen for this software
+  quantity       Int      @default(1)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   // Relationships
-  user            User                        @relation(fields: [userId], references: [id])
-  subscription    SoftwareSubscriptionPlan    @relation(fields: [subscriptionId], references: [id])
+  user         User                     @relation(fields: [userId], references: [id])
+  subscription SoftwareSubscriptionPlan @relation(fields: [subscriptionId], references: [id])
 }
 
-
-
 model Software {
-  id              String       @id @default(uuid())
-  name            String
-  description     String
-  discount        Float?
-  features        Json
-  requirements    Json
-  filePath        String
-  categoryId      String?
-  sellerId        String
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
-  status          Int          @default(0) // 0 = PENDING, 1 = ACTIVE, 2 = INACTIVE
-  averageRating   Float        @default(0)
+  id            String   @id @default(uuid())
+  name          String
+  description   String
+  discount      Float?
+  features      Json
+  requirements  Json
+  filePath      String
+  categoryId    String?
+  sellerId      String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  status        Int      @default(0) // 0 = PENDING, 1 = ACTIVE, 2 = INACTIVE
+  averageRating Float    @default(0)
 
   // Relationships
-  category        Category?     @relation(fields: [categoryId], references: [id])
-  seller          SellerProfile @relation(fields: [sellerId], references: [id])
-  reviews         Review[]
-  wishlist        Wishlist[]
-  priceHistory    PriceHistory[]
-  subscriptions   SoftwareSubscriptionPlan[]
+  category      Category?                  @relation(fields: [categoryId], references: [id])
+  seller        SellerProfile              @relation(fields: [sellerId], references: [id])
+  reviews       Review[]
+  wishlist      Wishlist[]
+  priceHistory  PriceHistory[]
+  subscriptions SoftwareSubscriptionPlan[]
 
   Notification Notification[]
 }
 
 model LicenseKey {
-  id              String     @id @default(uuid())
-  key             String     @unique
-  softwareSubscriptionId      String
-  userId          String
-  validUntil      DateTime
-  createdAt       DateTime   @default(now())
-  isExpired       Boolean    @default(false)
-  isActive        Boolean    @default(true) 
-  redeemedAt      DateTime?  // Optional: when the user first activated the key
+  id                     String    @id @default(uuid())
+  key                    String    @unique
+  softwareSubscriptionId String
+  userId                 String
+  validUntil             DateTime
+  createdAt              DateTime  @default(now())
+  isExpired              Boolean   @default(false)
+  isActive               Boolean   @default(true)
+  redeemedAt             DateTime? // Optional: when the user first activated the key
 
   // Relationships
-  subscription        SoftwareSubscriptionPlan   @relation(fields: [softwareSubscriptionId], references: [id])
-  user            User       @relation(fields: [userId], references: [id])
+  subscription SoftwareSubscriptionPlan @relation(fields: [softwareSubscriptionId], references: [id])
+  user         User                     @relation(fields: [userId], references: [id])
 }
 
 model Order {
-  id              String      @id @default(uuid())
-  userId          String
-  totalAmount     Float
-  status          OrderStatus @default(PENDING)
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
+  id          String      @id @default(uuid())
+  userId      String
+  totalAmount Float
+  status      OrderStatus @default(PENDING)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
 
-  items           OrderItem[]
-  payment         Payment?
+  items            OrderItem[]
+  payment          Payment?
   UserOrderHistory UserOrderHistory[]
 
   // Relationships
-  user            User        @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id])
 }
 
 model OrderItem {
-  id              String     @id @default(uuid())
-  orderId         String
-  subscriptionId  String  
-  price           Float
-  status          SubscriptionStatus @default(ACTIVE) // Tracks subscription status
+  id             String             @id @default(uuid())
+  orderId        String
+  subscriptionId String
+  price          Float
+  status         SubscriptionStatus @default(ACTIVE) // Tracks subscription status
 
   // Relationships
-  order           Order      @relation(fields: [orderId], references: [id])
-  subscription    SoftwareSubscriptionPlan? @relation(fields: [subscriptionId], references: [id])
+  order        Order                     @relation(fields: [orderId], references: [id])
+  subscription SoftwareSubscriptionPlan? @relation(fields: [subscriptionId], references: [id])
 }
 
-
 model SubscriptionPlan {
-  id              String       @id @default(uuid())
-  name            String
-  duration        Int          // In months
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
+  id        String   @id @default(uuid())
+  name      String
+  duration  Int // In months
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relationships
-  subscriptions   SoftwareSubscriptionPlan[]
-} 
+  subscriptions SoftwareSubscriptionPlan[]
+}
 
 model SoftwareSubscriptionPlan {
-  id                  String     @id @default(uuid())
-  softwareId          String
-  subscriptionPlanId  String
-  basePrice           Float? 
-  price               Float
-  status              SubscriptionStatus @default(ACTIVE) // Status tracking
-  createdAt           DateTime   @default(now())
+  id                 String             @id @default(uuid())
+  softwareId         String
+  subscriptionPlanId String
+  basePrice          Float?
+  price              Float
+  status             SubscriptionStatus @default(ACTIVE) // Status tracking
+  createdAt          DateTime           @default(now())
 
   // Relationships
-  software           Software          @relation(fields: [softwareId], references: [id])
-  subscriptionPlan   SubscriptionPlan  @relation(fields: [subscriptionPlanId], references: [id])
-  licenses        LicenseKey[]
-  orderItems         OrderItem[]       // Added opposite relation field
-  carts              Cart[]            // Added opposite relation field
+  software         Software         @relation(fields: [softwareId], references: [id])
+  subscriptionPlan SubscriptionPlan @relation(fields: [subscriptionPlanId], references: [id])
+  licenses         LicenseKey[]
+  orderItems       OrderItem[] // Added opposite relation field
+  carts            Cart[] // Added opposite relation field
 
-  @@unique([softwareId, subscriptionPlanId]) 
+  @@unique([softwareId, subscriptionPlanId])
 }
 
 model Payment {
-  id              String     @id @default(uuid())
-  amount          Float
-  method          String     // PayPro-specific method
-  transactionId   String     @unique
-  status          String
-  userId          String
-  orderId         String? @unique
-  createdAt       DateTime   @default(now())
+  id            String   @id @default(uuid())
+  amount        Float
+  method        String // PayPro-specific method
+  transactionId String   @unique
+  status        String
+  userId        String
+  orderId       String?  @unique
+  createdAt     DateTime @default(now())
 
   // Relationships
-  user            User       @relation(fields: [userId], references: [id])
-  order           Order?     @relation(fields: [orderId], references: [id])
+  user  User   @relation(fields: [userId], references: [id])
+  order Order? @relation(fields: [orderId], references: [id])
 }
 
 model Review {
-  id              String     @id @default(uuid())
-  rating          Int
-  comment         String?
-  userId          String
-  softwareId      String
-  createdAt       DateTime   @default(now())
-  isDeleted       Boolean    @default(false) 
+  id         String   @id @default(uuid())
+  rating     Int
+  comment    String?
+  userId     String
+  softwareId String
+  createdAt  DateTime @default(now())
+  isDeleted  Boolean  @default(false)
 
   // Relationships
-  user            User       @relation(fields: [userId], references: [id])
-  software        Software   @relation(fields: [softwareId], references: [id])
+  user     User     @relation(fields: [userId], references: [id])
+  software Software @relation(fields: [softwareId], references: [id])
 }
 
 model Notification {
-  id              String           @id @default(uuid())
-  type            NotificationType
-  userId          String
-  softwareId      String?
-  message         String
-  isRead          Boolean          @default(false)
-  createdAt       DateTime         @default(now())
+  id         String           @id @default(uuid())
+  type       NotificationType
+  userId     String
+  softwareId String?
+  message    String
+  isRead     Boolean          @default(false)
+  createdAt  DateTime         @default(now())
 
   // Relationships
-  user            User             @relation(fields: [userId], references: [id])
-  software        Software?        @relation(fields: [softwareId], references: [id])
+  user     User      @relation(fields: [userId], references: [id])
+  software Software? @relation(fields: [softwareId], references: [id])
 }
 
 model Wishlist {
-  id              String     @id @default(uuid())
-  userId          String
-  softwareId      String
-  createdAt       DateTime   @default(now())
+  id         String   @id @default(uuid())
+  userId     String
+  softwareId String
+  createdAt  DateTime @default(now())
 
   // Relationships
-  user            User       @relation(fields: [userId], references: [id])
-  software        Software   @relation(fields: [softwareId], references: [id])
+  user     User     @relation(fields: [userId], references: [id])
+  software Software @relation(fields: [softwareId], references: [id])
 }
 
 model PriceHistory {
-  id              String     @id @default(uuid())
-  softwareId      String
-  oldPrice        Float
-  newPrice        Float
-  changedAt       DateTime   @default(now())
+  id         String   @id @default(uuid())
+  softwareId String
+  oldPrice   Float
+  newPrice   Float
+  changedAt  DateTime @default(now())
 
-  software        Software   @relation(fields: [softwareId], references: [id])
+  software Software @relation(fields: [softwareId], references: [id])
 }
 
 model UserOrderHistory {
-  id              String     @id @default(uuid())
-  userId          String
-  orderId         String
-  createdAt       DateTime   @default(now())
+  id        String   @id @default(uuid())
+  userId    String
+  orderId   String
+  createdAt DateTime @default(now())
 
-  user            User       @relation(fields: [userId], references: [id])
-  order           Order      @relation(fields: [orderId], references: [id])
+  user  User  @relation(fields: [userId], references: [id])
+  order Order @relation(fields: [orderId], references: [id])
 }

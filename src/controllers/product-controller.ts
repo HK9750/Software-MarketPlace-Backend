@@ -50,7 +50,6 @@ export const getAllProducts = AsyncErrorHandler(
                     orderBy: {
                         price: 'asc',
                     },
-                    take: 1,
                 },
                 wishlist: req.user
                     ? {
@@ -73,7 +72,7 @@ export const getAllProducts = AsyncErrorHandler(
             return {
                 ...rest,
                 isWishlisted,
-                subscriptions: subscriptions[0]?.price || null,
+                subscriptions: subscriptions || null,
             };
         });
 
@@ -301,25 +300,20 @@ export const createProduct = AsyncErrorHandler(
             );
         }
 
-        // Create a temp folder if it doesn't exist
         const tempDir = path.join(__dirname, '../public/temp');
         if (!fs.existsSync(tempDir)) {
             fs.mkdirSync(tempDir, { recursive: true });
         }
 
-        // Use absolute path for file saving
         const tempPath = path.join(tempDir, file.name);
 
-        // Move uploaded file to temp path
         await file.mv(tempPath);
 
-        // Upload to Cloudinary
         const uploadedImage = await uploadOnCloudinary(tempPath);
         if (!uploadedImage) {
             return next(new ErrorHandler('Image upload failed', 500));
         }
 
-        // Optional: delete temp file
         fs.unlink(tempPath, (err) => {
             if (err) console.error('Failed to delete temp file:', err);
         });

@@ -2,9 +2,10 @@ import { Request, Response, NextFunction } from 'express';
 import AsyncErrorHandler from '../utils/async-handler';
 import ErrorHandler from '../utils/error-handler';
 import prisma from '../lib/prisma';
+import { AuthenticatedRequest } from './subscription-controller';
 
 export const GetWishlist = AsyncErrorHandler(
-    async (req: Request, res: Response, next: NextFunction) => {
+    async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
         const userId = req.user?.id;
         if (!userId) {
             return next(new ErrorHandler('User not authenticated', 401));
@@ -13,7 +14,19 @@ export const GetWishlist = AsyncErrorHandler(
         const wishlist = await prisma.wishlist.findMany({
             where: { userId },
             include: {
-                software: true,
+                software: {
+                    include: {
+                        subscriptions: {
+                            select: {
+                                price: true,
+                            },
+                            orderBy: {
+                                price: 'asc',
+                            },
+                            take: 1,
+                        },
+                    },
+                },
             },
         });
 
@@ -26,7 +39,7 @@ export const GetWishlist = AsyncErrorHandler(
 );
 
 export const ToggleWishlist = AsyncErrorHandler(
-    async (req: Request, res: Response, next: NextFunction) => {
+    async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
         const { softwareId } = req.params;
         const userId = req.user?.id;
 

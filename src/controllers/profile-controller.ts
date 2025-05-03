@@ -5,6 +5,10 @@ import prisma from '../lib/prisma';
 import { exclude } from '../utils/exclude';
 import { UserRole } from '@prisma/client';
 import { AuthenticatedRequest } from './subscription-controller';
+import { UploadedFile } from 'express-fileupload';
+import path from 'path';
+import fs from 'fs';
+import { uploadOnCloudinary } from '../lib/cloudinary';
 
 export const getProfile = AsyncErrorHandler(
     async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
@@ -45,17 +49,51 @@ export const getProfile = AsyncErrorHandler(
 
 export const setupProfile = AsyncErrorHandler(
     async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+        if (!req.body.data) {
+            return next(new ErrorHandler('Missing product data', 400));
+        }
+
+        const parsedData = JSON.parse(req.body.data);
+
         const { firstName, lastName, phone, address, websiteLink, role } =
-            req.body;
+            parsedData;
+
+        if (!req.files || !req.files.image) {
+            return next(new ErrorHandler('No image file provided', 400));
+        }
+
+        const file = req.files.image as UploadedFile;
+
         const userId = req.user?.id;
         if (!userId) {
             return next(new ErrorHandler('User not authenticated', 401));
         }
 
+        const tempDir = path.join(__dirname, '../public/temp');
+        if (!fs.existsSync(tempDir)) {
+            fs.mkdirSync(tempDir, { recursive: true });
+        }
+
+        const tempPath = path.join(tempDir, file.name);
+
+        await file.mv(tempPath);
+
+        const uploadedImage = await uploadOnCloudinary(tempPath);
+        if (!uploadedImage) {
+            return next(new ErrorHandler('Image upload failed', 500));
+        }
+
+        fs.unlink(tempPath, (err) => {
+            if (err) console.error('Failed to delete temp file:', err);
+        });
+
+        const filePath = uploadedImage.secure_url;
+
         const data: any = {
             profile: {
                 create: {
                     firstName,
+                    avatar,
                     lastName,
                     phone,
                     address,
