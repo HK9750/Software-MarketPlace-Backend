@@ -93,7 +93,6 @@ export const setupProfile = AsyncErrorHandler(
             profile: {
                 create: {
                     firstName,
-                    avatar,
                     lastName,
                     phone,
                     address,
