@@ -7,7 +7,9 @@ import {
     forgotPassword,
     resetPassword,
     socialLogin,
+    changePassword,
 } from '../controllers/auth-controller';
+import { authenticateUser } from '../middlewares/auth-middleware';
 
 const router = express.Router();
 
@@ -19,5 +21,7 @@ router.post('/social', socialLogin);
 
 router.post('/forgot-password', forgotPassword);
 router.post('/reset-password', resetPassword);
+
+router.put('/change-password', authenticateUser, changePassword);
 
 export default router;

@@ -10,6 +10,7 @@ import { generatePasswordResetEmailHtml } from '../lib/emails/forgot-password-em
 import config from '../config';
 import prisma from '../lib/prisma';
 import { UserRole } from '@prisma/client';
+import { AuthenticatedRequest } from './subscription-controller';
 
 export const generateTokens = (userId: string, role: UserRole) => {
     const accessTokenOptions: jwt.SignOptions = {
@@ -194,8 +195,7 @@ export const socialLogin = AsyncErrorHandler(
             user.id,
             user.role
         );
-        console.log('Access token is', accessToken);
-        console.log('Refresh token is', refreshToken);
+
         res.status(200).json({
             success: true,
             message: 'Logged in successfully',
@@ -313,5 +313,39 @@ export const resetPassword = AsyncErrorHandler(
         } catch (error) {
             return next(new ErrorHandler('Invalid reset token', 400));
         }
+    }
+
+);
+
+
+export const changePassword = AsyncErrorHandler(
+    async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+        const { oldPassword, newPassword } = req.body;
+        const userId = req.user?.id;
+
+        if (!userId) {
+            return next(new ErrorHandler('User not found', 404));
+        }
+
+        const user = await prisma.user.findUnique({ where: { id: userId } });
+        if (!user) {
+            return next(new ErrorHandler('User not found', 404));
+        }
+
+        if (!(await bcrypt.compare(oldPassword, user.password))) {
+            return next(new ErrorHandler('Invalid old password', 401));
+        }
+
+        const passwordHash = await bcrypt.hash(newPassword, 12);
+
+        await prisma.user.update({
+            where: { id: user.id },
+            data: { password: passwordHash },
+        });
+
+        res.status(200).json({
+            success: true,
+            message: 'Password changed successfully',
+        });
     }
 );
