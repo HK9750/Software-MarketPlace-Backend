@@ -49,45 +49,17 @@ export const getProfile = AsyncErrorHandler(
 
 export const setupProfile = AsyncErrorHandler(
     async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-        if (!req.body.data) {
+        if (!req.body) {
             return next(new ErrorHandler('Missing product data', 400));
         }
 
-        const parsedData = JSON.parse(req.body.data);
-
         const { firstName, lastName, phone, address, websiteLink, role } =
-            parsedData;
-
-        if (!req.files || !req.files.image) {
-            return next(new ErrorHandler('No image file provided', 400));
-        }
-
-        const file = req.files.image as UploadedFile;
+            req.body;
 
         const userId = req.user?.id;
         if (!userId) {
             return next(new ErrorHandler('User not authenticated', 401));
         }
-
-        const tempDir = path.join(__dirname, '../public/temp');
-        if (!fs.existsSync(tempDir)) {
-            fs.mkdirSync(tempDir, { recursive: true });
-        }
-
-        const tempPath = path.join(tempDir, file.name);
-
-        await file.mv(tempPath);
-
-        const uploadedImage = await uploadOnCloudinary(tempPath);
-        if (!uploadedImage) {
-            return next(new ErrorHandler('Image upload failed', 500));
-        }
-
-        fs.unlink(tempPath, (err) => {
-            if (err) console.error('Failed to delete temp file:', err);
-        });
-
-        const filePath = uploadedImage.secure_url;
 
         const data: any = {
             profile: {
@@ -103,6 +75,7 @@ export const setupProfile = AsyncErrorHandler(
         // Update the role if provided
         if (role !== undefined) {
             data.role = role;
+            req.user.role = role;
         }
 
         // If a websiteLink is provided, create a seller profile as well
@@ -205,6 +178,7 @@ export const getSellerProfile = AsyncErrorHandler(
                 username: true,
                 email: true,
                 profile: true,
+                role: true,
                 sellerProfile: {
                     select: {
                         id: true,

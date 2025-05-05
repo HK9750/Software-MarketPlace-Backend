@@ -14,10 +14,11 @@ const redisClient = createClient();
 
 export const getAllProducts = AsyncErrorHandler(
     async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-        const { status, category } = req.query;
+        const { status, category, name } = req.query;
 
         const products = await prisma.software.findMany({
             where: {
+                name: name != '' ? { contains: name as string } : undefined,
                 status: status ? parseInt(status as string) : undefined,
                 ...(category ? { categoryId: category as string } : {}),
             },
