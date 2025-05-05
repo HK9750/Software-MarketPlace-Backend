@@ -372,6 +372,25 @@ export const updateProduct = AsyncErrorHandler(
         const { name, description, features, requirements, discount } =
             req.body;
         const productId = req.params.id;
+        if (!req.files || !req.files.image) {
+            return next(new ErrorHandler('No image file provided', 400));
+        }
+        const file = req.files.image as UploadedFile;
+        const tempDir = path.join(__dirname, '../public/temp');
+        if (!fs.existsSync(tempDir)) {
+            fs.mkdirSync(tempDir, { recursive: true });
+        }
+        const tempPath = path.join(tempDir, file.name);
+        await file.mv(tempPath);
+        const uploadedImage = await uploadOnCloudinary(tempPath);
+        if (!uploadedImage) {
+            return next(new ErrorHandler('Image upload failed', 500));
+        }
+        fs.unlink(tempPath, (err) => {
+            if (err) console.error('Failed to delete temp file:', err);
+        });
+        const filePath = uploadedImage.secure_url;
+        console.log(filePath);
 
         // Ensure the product exists
         const oldProduct = await prisma.software.findUnique({
@@ -406,6 +425,7 @@ export const updateProduct = AsyncErrorHandler(
                     ...(features && { features }),
                     ...(requirements && { requirements }),
                     ...(typeof discount === 'number' && { discount }),
+                    ...(filePath && { filePath }),
                 },
             });
 
