@@ -314,9 +314,7 @@ export const resetPassword = AsyncErrorHandler(
             return next(new ErrorHandler('Invalid reset token', 400));
         }
     }
-
 );
-
 
 export const changePassword = AsyncErrorHandler(
     async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
