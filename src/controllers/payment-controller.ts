@@ -5,7 +5,13 @@ import ErrorHandler from '../utils/error-handler';
 
 export const createPayment = AsyncErrorHandler(
     async (req: Request, res: Response, next: NextFunction) => {
-        const { amount, method, transactionId, userId, orderId } = req.body;
+        const {
+            amount,
+            method = 'STRIPE',
+            transactionId,
+            userId,
+            orderId,
+        } = req.body;
 
         if (!amount || !method || !transactionId || !userId) {
             return next(
@@ -40,7 +46,7 @@ export const createPayment = AsyncErrorHandler(
 
         const payment = await prisma.payment.create({
             data: {
-                amount,
+                amount: parseFloat(amount),
                 method,
                 transactionId,
                 userId,
