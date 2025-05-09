@@ -198,7 +198,20 @@ export const getProduct = AsyncErrorHandler(
                         },
                     },
                 },
-                reviews: true,
+                reviews: {
+                    select: {
+                        id: true,
+                        rating: true,
+                        comment: true,
+                        createdAt: true,
+                        user: {
+                            select: {
+                                id: true,
+                                username: true,
+                            },
+                        },
+                    },
+                },
                 averageRating: true,
                 subscriptions: {
                     select: {
