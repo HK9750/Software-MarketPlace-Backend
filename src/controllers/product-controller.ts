@@ -369,28 +369,56 @@ export const createProduct = AsyncErrorHandler(
 
 export const updateProduct = AsyncErrorHandler(
     async (req: Request, res: Response, next: NextFunction) => {
-        const { name, description, features, requirements, discount } =
-            req.body;
+        if (!req.body.data) {
+            return next(new ErrorHandler('Missing product data', 400));
+        }
+
+        // Parse the JSON data string
+        const parsedData = JSON.parse(req.body.data);
+
+        const {
+            name,
+            description,
+            features,
+            requirements,
+            categoryId,
+            subscriptionOptions, // Expecting an array
+            discount,
+        } = parsedData;
         const productId = req.params.id;
-        if (!req.files || !req.files.image) {
-            return next(new ErrorHandler('No image file provided', 400));
+
+        // Initialize filePath to null - we'll only update it if a new image is provided
+        let filePath = null;
+
+        // Check if a file was uploaded and process it
+        if (req.files && req.files.image) {
+            const file = req.files.image as UploadedFile;
+
+            // Make sure the temp directory exists
+            const tempDir = path.join(__dirname, '../public/temp');
+            if (!fs.existsSync(tempDir)) {
+                fs.mkdirSync(tempDir, { recursive: true });
+            }
+
+            // Save the file temporarily
+            const tempPath = path.join(tempDir, file.name);
+            await file.mv(tempPath);
+
+            // Upload to Cloudinary
+            const uploadedImage = await uploadOnCloudinary(tempPath);
+            if (!uploadedImage) {
+                return next(new ErrorHandler('Image upload failed', 500));
+            }
+
+            // Delete the temporary file
+            fs.unlink(tempPath, (err) => {
+                if (err) console.error('Failed to delete temp file:', err);
+            });
+
+            // Set the file path to the uploaded image URL
+            filePath = uploadedImage.secure_url;
+            console.log('Uploaded image URL:', filePath);
         }
-        const file = req.files.image as UploadedFile;
-        const tempDir = path.join(__dirname, '../public/temp');
-        if (!fs.existsSync(tempDir)) {
-            fs.mkdirSync(tempDir, { recursive: true });
-        }
-        const tempPath = path.join(tempDir, file.name);
-        await file.mv(tempPath);
-        const uploadedImage = await uploadOnCloudinary(tempPath);
-        if (!uploadedImage) {
-            return next(new ErrorHandler('Image upload failed', 500));
-        }
-        fs.unlink(tempPath, (err) => {
-            if (err) console.error('Failed to delete temp file:', err);
-        });
-        const filePath = uploadedImage.secure_url;
-        console.log(filePath);
 
         // Ensure the product exists
         const oldProduct = await prisma.software.findUnique({
@@ -444,7 +472,58 @@ export const updateProduct = AsyncErrorHandler(
                 `);
             }
 
-            // Step 4: Get new lowest subscription price
+            // Step 4: Update subscription options if provided
+            if (
+                subscriptionOptions &&
+                Array.isArray(subscriptionOptions) &&
+                subscriptionOptions.length > 0
+            ) {
+                for (const option of subscriptionOptions) {
+                    const { subscriptionPlanId, price } = option;
+
+                    // Check if this subscription plan already exists for this product
+                    const existingPlan =
+                        await tx.softwareSubscriptionPlan.findUnique({
+                            where: {
+                                softwareId_subscriptionPlanId: {
+                                    softwareId: productId,
+                                    subscriptionPlanId,
+                                },
+                            },
+                        });
+
+                    if (existingPlan) {
+                        // Update existing plan
+                        await tx.softwareSubscriptionPlan.update({
+                            where: {
+                                id: existingPlan.id,
+                            },
+                            data: {
+                                basePrice: price,
+                                price:
+                                    typeof discount === 'number'
+                                        ? price * (1 - discount / 100)
+                                        : price,
+                            },
+                        });
+                    } else {
+                        // Create new plan
+                        await tx.softwareSubscriptionPlan.create({
+                            data: {
+                                softwareId: productId,
+                                subscriptionPlanId,
+                                basePrice: price,
+                                price:
+                                    typeof discount === 'number'
+                                        ? price * (1 - discount / 100)
+                                        : price,
+                            },
+                        });
+                    }
+                }
+            }
+
+            // Step 5: Get new lowest subscription price
             const newLowestSubscription =
                 await tx.softwareSubscriptionPlan.findFirst({
                     where: { softwareId: productId },
@@ -457,7 +536,7 @@ export const updateProduct = AsyncErrorHandler(
                     },
                 });
 
-            // Step 5: If new price is lower, log history and queue notification
+            // Step 6: If new price is lower, log history and queue notification
             if (
                 oldLowestSubscription &&
                 newLowestSubscription &&
