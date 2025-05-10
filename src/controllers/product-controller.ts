@@ -220,6 +220,7 @@ export const getProduct = AsyncErrorHandler(
                         basePrice: true,
                         subscriptionPlan: {
                             select: {
+                                id: true,
                                 name: true,
                                 duration: true,
                             },
@@ -255,7 +256,7 @@ export const getProduct = AsyncErrorHandler(
 
         // Transform subscriptions to include only price and name
         const formattedSubscriptions = product.subscriptions.map((sub) => ({
-            id: sub.id,
+            id: sub.subscriptionPlan.id,
             basePrice: sub.basePrice,
             price: sub.price,
             name: sub.subscriptionPlan.name,
@@ -394,7 +395,6 @@ export const updateProduct = AsyncErrorHandler(
             description,
             features,
             requirements,
-            categoryId,
             subscriptionOptions, // Expecting an array
             discount,
         } = parsedData;
