@@ -621,7 +621,6 @@ export const UpdateStatus = AsyncErrorHandler(
         });
     }
 );
-
 export const getProductsForHomepage = AsyncErrorHandler(
     async (req: Request, res: Response, next: NextFunction) => {
         const cacheKey = 'homepage_products';
@@ -648,10 +647,18 @@ export const getProductsForHomepage = AsyncErrorHandler(
                         description: true,
                         filePath: true,
                         averageRating: true,
+                        subscriptions: {
+                            where: { status: 'ACTIVE' },
+                            orderBy: { price: 'asc' },
+                            take: 1,
+                            select: {
+                                price: true,
+                            },
+                        },
                         priceHistory: {
                             orderBy: { changedAt: 'desc' },
                             take: 1,
-                            select: { newPrice: true },
+                            select: { newPrice: true, oldPrice: true },
                         },
                     },
                 }),
@@ -671,6 +678,14 @@ export const getProductsForHomepage = AsyncErrorHandler(
                                 description: true,
                                 filePath: true,
                                 averageRating: true,
+                                subscriptions: {
+                                    where: { status: 'ACTIVE' },
+                                    orderBy: { price: 'asc' },
+                                    take: 1,
+                                    select: {
+                                        price: true,
+                                    },
+                                },
                             },
                         },
                     },
@@ -687,14 +702,38 @@ export const getProductsForHomepage = AsyncErrorHandler(
                         description: true,
                         filePath: true,
                         averageRating: true,
+                        subscriptions: {
+                            where: { status: 'ACTIVE' },
+                            orderBy: { price: 'asc' },
+                            take: 1,
+                            select: {
+                                price: true,
+                            },
+                        },
                         priceHistory: {
                             orderBy: { changedAt: 'desc' },
                             take: 1,
-                            select: { newPrice: true },
+                            select: { newPrice: true, oldPrice: true },
                         },
                     },
                 }),
             ]);
+
+        // Helper function to get appropriate price
+        const getPrice = (software: any) => {
+            // First try to get price from subscriptions
+            if (software.subscriptions && software.subscriptions.length > 0) {
+                return software.subscriptions[0].price;
+            }
+
+            // Next, try price history
+            if (software.priceHistory && software.priceHistory.length > 0) {
+                return software.priceHistory[0].newPrice;
+            }
+
+            // If no pricing information, use a default value
+            return 9.99; // Default price instead of null/0
+        };
 
         // Map into the shapes your frontend expects:
         const popular = popularRaw.map((p) => ({
@@ -703,7 +742,8 @@ export const getProductsForHomepage = AsyncErrorHandler(
             description: p.description,
             filePath: p.filePath,
             rating: p.averageRating,
-            latestPrice: p.priceHistory[0]?.newPrice ?? null,
+            latestPrice: getPrice(p),
+            oldPrice: p.priceHistory[0]?.oldPrice ?? null,
             type: 'popular' as const,
         }));
 
@@ -713,7 +753,8 @@ export const getProductsForHomepage = AsyncErrorHandler(
             description: h.software.description,
             filePath: h.software.filePath,
             rating: h.software.averageRating,
-            latestPrice: h.newPrice,
+            latestPrice: getPrice(h.software),
+            oldPrice: h.oldPrice ?? null,
             type: 'trending' as const,
         }));
 
@@ -723,7 +764,8 @@ export const getProductsForHomepage = AsyncErrorHandler(
             description: p.description,
             filePath: p.filePath,
             rating: p.averageRating,
-            latestPrice: p.priceHistory[0]?.newPrice ?? null,
+            latestPrice: getPrice(p),
+            oldPrice: p.priceHistory[0]?.oldPrice ?? null,
             type: 'bestseller' as const,
         }));
 
