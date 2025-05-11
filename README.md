@@ -89,18 +89,18 @@ REDIS_URL=redis://localhost:6379
 
 1. **Clone the repository:**
 
-   ```bash
-   git clone https://github.com/your-username/Software-MarketPlace-Backend.git
-   cd Software-MarketPlace-Backend
-   ```
+    ```bash
+    git clone https://github.com/your-username/Software-MarketPlace-Backend.git
+    cd Software-MarketPlace-Backend
+    ```
 
 2. **Install dependencies:**
 
-   ```bash
-   npm install
-   # or
-   yarn install
-   ```
+    ```bash
+    npm install
+    # or
+    yarn install
+    ```
 
 ---
 
@@ -110,17 +110,17 @@ REDIS_URL=redis://localhost:6379
 
 2. **Run Prisma migrations:**
 
-   ```bash
-   npx prisma migrate deploy
-   # or for development
-   npx prisma migrate dev
-   ```
+    ```bash
+    npx prisma migrate deploy
+    # or for development
+    npx prisma migrate dev
+    ```
 
 3. **Generate Prisma client:**
 
-   ```bash
-   npx prisma generate
-   ```
+    ```bash
+    npx prisma generate
+    ```
 
 ---
 
@@ -147,6 +147,7 @@ yarn seed
 ```
 
 This will create a user with:
+
 - **Email:** `admin@gmail.com`
 - **Username:** `superadmin`
 - **Password:** `Abc!23`
