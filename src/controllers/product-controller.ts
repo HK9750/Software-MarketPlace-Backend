@@ -447,7 +447,6 @@ export const updateProduct = AsyncErrorHandler(
 
         // Start a transaction
         const updatedProduct = await prisma.$transaction(async (tx) => {
-            // Step 1: Get the current lowest subscription price
             const oldLowestSubscription =
                 await tx.softwareSubscriptionPlan.findFirst({
                     where: { softwareId: productId },
@@ -460,7 +459,6 @@ export const updateProduct = AsyncErrorHandler(
                     },
                 });
 
-            // Step 2: Update the software with any provided fields
             const product = await tx.software.update({
                 where: { id: productId },
                 data: {
@@ -494,48 +492,25 @@ export const updateProduct = AsyncErrorHandler(
                 Array.isArray(subscriptionOptions) &&
                 subscriptionOptions.length > 0
             ) {
+                // Delete all old subscription plans for this product
+                await tx.softwareSubscriptionPlan.deleteMany({
+                    where: { softwareId: productId },
+                });
+
+                // Now create new ones
                 for (const option of subscriptionOptions) {
                     const { subscriptionPlanId, price } = option;
-
-                    // Check if this subscription plan already exists for this product
-                    const existingPlan =
-                        await tx.softwareSubscriptionPlan.findUnique({
-                            where: {
-                                softwareId_subscriptionPlanId: {
-                                    softwareId: productId,
-                                    subscriptionPlanId,
-                                },
-                            },
-                        });
-
-                    if (existingPlan) {
-                        // Update existing plan
-                        await tx.softwareSubscriptionPlan.update({
-                            where: {
-                                id: existingPlan.id,
-                            },
-                            data: {
-                                basePrice: price,
-                                price:
-                                    typeof discount === 'number'
-                                        ? price * (1 - discount / 100)
-                                        : price,
-                            },
-                        });
-                    } else {
-                        // Create new plan
-                        await tx.softwareSubscriptionPlan.create({
-                            data: {
-                                softwareId: productId,
-                                subscriptionPlanId,
-                                basePrice: price,
-                                price:
-                                    typeof discount === 'number'
-                                        ? price * (1 - discount / 100)
-                                        : price,
-                            },
-                        });
-                    }
+                    await tx.softwareSubscriptionPlan.create({
+                        data: {
+                            softwareId: productId,
+                            subscriptionPlanId,
+                            basePrice: price,
+                            price:
+                                typeof discount === 'number'
+                                    ? price * (1 - discount / 100)
+                                    : price,
+                        },
+                    });
                 }
             }
 
