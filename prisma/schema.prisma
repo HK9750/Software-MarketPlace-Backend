@@ -188,7 +188,7 @@ model SoftwareSubscriptionPlan {
   subscriptionPlanId String
   basePrice          Float?
   price              Float
-  status             SubscriptionStatus @default(ACTIVE) // Status tracking
+  status             SubscriptionStatus @default(ACTIVE) 
   createdAt          DateTime           @default(now())
 
   // Relationships

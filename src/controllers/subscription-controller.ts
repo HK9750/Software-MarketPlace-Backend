@@ -104,6 +104,7 @@ export const getMySubscriptions = AsyncErrorHandler(
                 subscription: {
                     select: {
                         price: true,
+                        status: true,
                         subscriptionPlan: {
                             select: {
                                 name: true,
@@ -121,9 +122,14 @@ export const getMySubscriptions = AsyncErrorHandler(
             },
         });
 
+        const filteredSubscriptions = subscriptions.filter(
+            (license) =>
+                license.subscription && license.subscription.status === 'ACTIVE'
+        );
+
         res.status(200).json({
             success: true,
-            subscriptions,
+            filteredSubscriptions,
         });
     }
 );

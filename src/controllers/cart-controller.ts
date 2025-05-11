@@ -17,6 +17,7 @@ export const getCartItems = AsyncErrorHandler(
                 subscription: {
                     select: {
                         id: true,
+                        status: true,
                         price: true,
                         subscriptionPlan: {
                             select: {
@@ -34,10 +35,15 @@ export const getCartItems = AsyncErrorHandler(
                 },
             },
         });
+
+        const filteredCartItems = cartItems.filter(
+            (item) => item.subscription && item.subscription.status === 'ACTIVE'
+        );
+
         res.status(200).json({
             success: true,
             message: 'Cart items retrieved successfully',
-            data: cartItems,
+            data: filteredCartItems,
         });
     }
 );
@@ -65,6 +71,7 @@ export const addToCart = AsyncErrorHandler(
                 subscription: {
                     select: {
                         price: true,
+                        status: true,
                         subscriptionPlan: { select: { name: true } },
                         software: {
                             select: {
@@ -77,6 +84,20 @@ export const addToCart = AsyncErrorHandler(
                 },
             },
         });
+
+        if (
+            !cartItem.subscription ||
+            cartItem.subscription.status !== 'ACTIVE'
+        ) {
+            await prisma.cart.delete({ where: { id: cartItem.id } });
+            return next(
+                new ErrorHandler(
+                    'Cannot add inactive subscription to cart',
+                    400
+                )
+            );
+        }
+
         res.status(201).json({
             success: true,
             message: 'Product added to cart successfully',

@@ -4,10 +4,8 @@ import AsyncErrorHandler from '../utils/async-handler';
 import ErrorHandler from '../utils/error-handler';
 import { createClient } from '../lib/redis-client';
 
-// Initialize Redis client
 const redisClient = createClient();
 
-// Cache keys
 const CACHE_KEYS = {
     ORDERS_OVER_TIME: 'analytics:orders-over-time',
     CONVERSION_RATE: 'analytics:conversion-rate',
@@ -17,7 +15,6 @@ const CACHE_KEYS = {
     DASHBOARD_SUMMARY: 'analytics:dashboard-summary',
 };
 
-// Cache TTL in seconds
 const CACHE_TTL = {
     SHORT: 5 * 60, // 5 minutes
     MEDIUM: 30 * 60, // 30 minutes

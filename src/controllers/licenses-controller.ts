@@ -27,10 +27,14 @@ export const getUserLicenses = AsyncErrorHandler(
             },
         });
 
+        const filteredLicenses = licenses.filter(
+            (license) =>
+                license.subscription && license.subscription.status === 'ACTIVE'
+        );
         res.status(200).json({
             success: true,
             message: 'Licenses retrieved successfully',
-            data: licenses,
+            data: filteredLicenses,
         });
     }
 );
@@ -62,7 +66,11 @@ export const getLicenseById = AsyncErrorHandler(
             },
         });
 
-        if (!license) {
+        if (
+            !license ||
+            !license.subscription ||
+            license.subscription.status !== 'ACTIVE'
+        ) {
             return next(new ErrorHandler('License not found', 404));
         }
 
@@ -101,10 +109,15 @@ export const getLicensesBySubscription = AsyncErrorHandler(
             },
         });
 
+        const filteredLicenses = licenses.filter(
+            (license) =>
+                license.subscription && license.subscription.status === 'ACTIVE'
+        );
+
         res.status(200).json({
             success: true,
             message: 'Licenses retrieved successfully',
-            data: licenses,
+            data: filteredLicenses,
         });
     }
 );
@@ -140,10 +153,14 @@ export const getActiveLicenses = AsyncErrorHandler(
             },
         });
 
+        const filteredLicenses = licenses.filter(
+            (license) =>
+                license.subscription && license.subscription.status === 'ACTIVE'
+        );
         res.status(200).json({
             success: true,
             message: 'Active licenses retrieved successfully',
-            data: licenses,
+            data: filteredLicenses,
         });
     }
 );

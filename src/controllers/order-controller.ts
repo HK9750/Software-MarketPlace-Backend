@@ -22,7 +22,10 @@ export const createOrder = AsyncErrorHandler(
         );
 
         const subscriptions = await prisma.softwareSubscriptionPlan.findMany({
-            where: { id: { in: subscriptionIds } },
+            where: {
+                id: { in: subscriptionIds },
+                status: 'ACTIVE',
+            },
             select: {
                 id: true,
                 price: true,

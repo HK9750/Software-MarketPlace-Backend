@@ -106,6 +106,9 @@ export const getDashboardStats = AsyncErrorHandler(
                     },
                 },
                 subscriptions: {
+                    where: {
+                        status: 'ACTIVE',
+                    },
                     take: 1,
                     orderBy: { createdAt: 'desc' },
                 },
@@ -136,6 +139,9 @@ export const getDashboardStats = AsyncErrorHandler(
                 softwareProducts: {
                     include: {
                         subscriptions: {
+                            where: {
+                                status: 'ACTIVE',
+                            },
                             include: {
                                 orderItems: {
                                     include: {
