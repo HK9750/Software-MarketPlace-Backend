@@ -66,16 +66,13 @@ export const getLicenseById = AsyncErrorHandler(
             },
         });
 
-
-
-         if (
-             !license ||
-             !license.subscription ||
-             license.subscription.status !== 'ACTIVE'
-         ) {
-             return next(new ErrorHandler('License not found', 404));
-         }
-
+        if (
+            !license ||
+            !license.subscription ||
+            license.subscription.status !== 'ACTIVE'
+        ) {
+            return next(new ErrorHandler('License not found', 404));
+        }
 
         res.status(200).json({
             success: true,
