@@ -602,14 +602,14 @@ export const UpdateStatus = AsyncErrorHandler(
 export const getProductsForHomepage = AsyncErrorHandler(
     async (req: Request, res: Response, next: NextFunction) => {
         const cacheKey = 'homepage_products';
-        const cached = await redisClient.get(cacheKey);
-        if (cached) {
-            return res.status(200).json({
-                success: true,
-                message: 'Products retrieved successfully (from cache)',
-                softwares: JSON.parse(cached),
-            });
-        }
+        // const cached = await redisClient.get(cacheKey);
+        // if (cached) {
+        //     return res.status(200).json({
+        //         success: true,
+        //         message: 'Products retrieved successfully (from cache)',
+        //         softwares: JSON.parse(cached),
+        //     });
+        // }
 
         // Fire all three queries in parallel
         const [popularRaw, trendingHistories, bestSellerRaw] =
