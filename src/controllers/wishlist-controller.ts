@@ -17,6 +17,7 @@ export const GetWishlist = AsyncErrorHandler(
                 software: {
                     include: {
                         subscriptions: {
+                            where: { status: 'ACTIVE' },
                             select: {
                                 price: true,
                             },

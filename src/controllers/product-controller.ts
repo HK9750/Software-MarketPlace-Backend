@@ -45,6 +45,7 @@ export const getAllProducts = AsyncErrorHandler(
                 },
                 averageRating: true,
                 subscriptions: {
+                    where: { status: 'ACTIVE' },
                     select: {
                         price: true,
                     },
@@ -128,6 +129,7 @@ export const getAllProductsBySeller = AsyncErrorHandler(
                 },
                 averageRating: true,
                 subscriptions: {
+                    where: { status: 'ACTIVE' },
                     select: {
                         price: true,
                     },
@@ -216,6 +218,7 @@ export const getProduct = AsyncErrorHandler(
                 },
                 averageRating: true,
                 subscriptions: {
+                    where: { status: 'ACTIVE' },
                     select: {
                         id: true,
                         price: true,
@@ -403,20 +406,16 @@ export const updateProduct = AsyncErrorHandler(
         } = parsedData;
         const productId = req.params.id;
 
-        // Initialize filePath to null - we'll only update it if a new image is provided
         let filePath = null;
 
-        // Check if a file was uploaded and process it
         if (req.files && req.files.image) {
             const file = req.files.image as UploadedFile;
 
-            // Make sure the temp directory exists
             const tempDir = path.join(__dirname, '../public/temp');
             if (!fs.existsSync(tempDir)) {
                 fs.mkdirSync(tempDir, { recursive: true });
             }
 
-            // Save the file temporarily
             const tempPath = path.join(tempDir, file.name);
             await file.mv(tempPath);
 
@@ -431,12 +430,10 @@ export const updateProduct = AsyncErrorHandler(
                 if (err) console.error('Failed to delete temp file:', err);
             });
 
-            // Set the file path to the uploaded image URL
             filePath = uploadedImage.secure_url;
             console.log('Uploaded image URL:', filePath);
         }
 
-        // Ensure the product exists
         const oldProduct = await prisma.software.findUnique({
             where: { id: productId },
         });
@@ -445,7 +442,6 @@ export const updateProduct = AsyncErrorHandler(
             return next(new ErrorHandler('Product not found', 404));
         }
 
-        // Start a transaction
         const updatedProduct = await prisma.$transaction(async (tx) => {
             const oldLowestSubscription =
                 await tx.softwareSubscriptionPlan.findFirst({
@@ -471,7 +467,6 @@ export const updateProduct = AsyncErrorHandler(
                 },
             });
 
-            // Step 3: Recalculate prices if discount is provided
             if (
                 typeof discount === 'number' &&
                 discount >= 0 &&
@@ -486,35 +481,59 @@ export const updateProduct = AsyncErrorHandler(
                 `);
             }
 
-            // Step 4: Update subscription options if provided
             if (
                 subscriptionOptions &&
                 Array.isArray(subscriptionOptions) &&
                 subscriptionOptions.length > 0
             ) {
-                // Delete all old subscription plans for this product
-                await tx.softwareSubscriptionPlan.deleteMany({
-                    where: { softwareId: productId },
+                // Cancel all current active plans for this product
+                await tx.softwareSubscriptionPlan.updateMany({
+                    where: { softwareId: productId, status: 'ACTIVE' },
+                    data: { status: 'CANCELED' },
                 });
 
-                // Now create new ones
                 for (const option of subscriptionOptions) {
                     const { subscriptionPlanId, price } = option;
-                    await tx.softwareSubscriptionPlan.create({
-                        data: {
-                            softwareId: productId,
-                            subscriptionPlanId,
-                            basePrice: price,
-                            price:
-                                typeof discount === 'number'
-                                    ? price * (1 - discount / 100)
-                                    : price,
-                        },
-                    });
+                    // Check if a plan with this softwareId and subscriptionPlanId exists (any status)
+                    const existing =
+                        await tx.softwareSubscriptionPlan.findFirst({
+                            where: {
+                                softwareId: productId,
+                                subscriptionPlanId,
+                            },
+                        });
+
+                    if (existing) {
+                        // Update the existing plan to ACTIVE and update price/basePrice
+                        await tx.softwareSubscriptionPlan.update({
+                            where: { id: existing.id },
+                            data: {
+                                basePrice: price,
+                                price:
+                                    typeof discount === 'number'
+                                        ? price * (1 - discount / 100)
+                                        : price,
+                                status: 'ACTIVE',
+                            },
+                        });
+                    } else {
+                        // Create a new plan if it doesn't exist
+                        await tx.softwareSubscriptionPlan.create({
+                            data: {
+                                softwareId: productId,
+                                subscriptionPlanId,
+                                basePrice: price,
+                                price:
+                                    typeof discount === 'number'
+                                        ? price * (1 - discount / 100)
+                                        : price,
+                                status: 'ACTIVE',
+                            },
+                        });
+                    }
                 }
             }
 
-            // Step 5: Get new lowest subscription price
             const newLowestSubscription =
                 await tx.softwareSubscriptionPlan.findFirst({
                     where: { softwareId: productId },
@@ -527,7 +546,6 @@ export const updateProduct = AsyncErrorHandler(
                     },
                 });
 
-            // Step 6: If new price is lower, log history and queue notification
             if (
                 oldLowestSubscription &&
                 newLowestSubscription &&
