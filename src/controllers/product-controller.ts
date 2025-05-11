@@ -176,6 +176,7 @@ export const getProduct = AsyncErrorHandler(
                 id: true,
                 status: true,
                 name: true,
+                discount: true,
                 description: true,
                 features: true,
                 requirements: true,
