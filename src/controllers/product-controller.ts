@@ -622,11 +622,11 @@ export const getProductsForHomepage = AsyncErrorHandler(
         const cacheKey = 'homepage_products';
         // const cached = await redisClient.get(cacheKey);
         // if (cached) {
-        //     return res.status(200).json({
-        //         success: true,
-        //         message: 'Products retrieved successfully (from cache)',
-        //         softwares: JSON.parse(cached),
-        //     });
+        //   return res.status(200).json({
+        //     success: true,
+        //     message: 'Products retrieved successfully (from cache)',
+        //     softwares: JSON.parse(cached),
+        //   });
         // }
 
         // Fire all three queries in parallel
@@ -647,9 +647,7 @@ export const getProductsForHomepage = AsyncErrorHandler(
                             where: { status: 'ACTIVE' },
                             orderBy: { price: 'asc' },
                             take: 1,
-                            select: {
-                                price: true,
-                            },
+                            select: { price: true },
                         },
                         priceHistory: {
                             orderBy: { changedAt: 'desc' },
@@ -678,9 +676,7 @@ export const getProductsForHomepage = AsyncErrorHandler(
                                     where: { status: 'ACTIVE' },
                                     orderBy: { price: 'asc' },
                                     take: 1,
-                                    select: {
-                                        price: true,
-                                    },
+                                    select: { price: true },
                                 },
                             },
                         },
@@ -702,9 +698,7 @@ export const getProductsForHomepage = AsyncErrorHandler(
                             where: { status: 'ACTIVE' },
                             orderBy: { price: 'asc' },
                             take: 1,
-                            select: {
-                                price: true,
-                            },
+                            select: { price: true },
                         },
                         priceHistory: {
                             orderBy: { changedAt: 'desc' },
@@ -715,23 +709,18 @@ export const getProductsForHomepage = AsyncErrorHandler(
                 }),
             ]);
 
-        // Helper function to get appropriate price
+        // Helper to pick the current price
         const getPrice = (software: any) => {
-            // First try to get price from subscriptions
-            if (software.subscriptions && software.subscriptions.length > 0) {
+            if (software.subscriptions?.length) {
                 return software.subscriptions[0].price;
             }
-
-            // Next, try price history
-            if (software.priceHistory && software.priceHistory.length > 0) {
+            if (software.priceHistory?.length) {
                 return software.priceHistory[0].newPrice;
             }
-
-            // If no pricing information, use a default value
-            return 9.99; // Default price instead of null/0
+            return 9.99;
         };
 
-        // Map into the shapes your frontend expects:
+        // 1) Popular
         const popular = popularRaw.map((p) => ({
             id: p.id,
             name: p.name,
@@ -743,17 +732,39 @@ export const getProductsForHomepage = AsyncErrorHandler(
             type: 'popular' as const,
         }));
 
-        const trending = trendingHistories.map((h) => ({
-            id: h.software.id,
-            name: h.software.name,
-            description: h.software.description,
-            filePath: h.software.filePath,
-            rating: h.software.averageRating,
-            latestPrice: getPrice(h.software),
-            oldPrice: h.oldPrice ?? null,
-            type: 'trending' as const,
-        }));
+        // 2) Trending (deduped by software.id)
+        const trendingSet = new Set<string>();
+        const trending = trendingHistories.reduce(
+            (acc, h) => {
+                const sw = h.software;
+                if (!trendingSet.has(sw.id)) {
+                    trendingSet.add(sw.id);
+                    acc.push({
+                        id: Number(sw.id),
+                        name: sw.name,
+                        description: sw.description,
+                        filePath: sw.filePath,
+                        rating: sw.averageRating,
+                        latestPrice: getPrice(sw),
+                        oldPrice: h.oldPrice ?? null,
+                        type: 'trending' as const,
+                    });
+                }
+                return acc;
+            },
+            [] as {
+                id: number;
+                name: string;
+                description: string;
+                filePath: string;
+                rating: number;
+                latestPrice: number;
+                oldPrice: number | null;
+                type: 'trending';
+            }[]
+        );
 
+        // 3) Best Sellers
         const bestSellers = bestSellerRaw.map((p) => ({
             id: p.id,
             name: p.name,
