@@ -230,8 +230,6 @@ export const getSellerProfile = AsyncErrorHandler(
 
 export const VerifySellerProfile = AsyncErrorHandler(
     async (req: AuthenticatedRequest, res: Response) => {
-        const { verified } = req.body;
-
         const user = await prisma.user.update({
             where: {
                 id: req.params.id,
@@ -239,7 +237,7 @@ export const VerifySellerProfile = AsyncErrorHandler(
             data: {
                 sellerProfile: {
                     update: {
-                        verified,
+                        verified: true,
                     },
                 },
             },

@@ -23,21 +23,22 @@ export const AddReview = AsyncErrorHandler(
             where: { userId, subscription: { softwareId }, isActive: true },
         });
         if (!license) {
-            return next(
-                new ErrorHandler(
-                    'You are not eligible to review this product',
-                    403
-                )
-            );
+            return res.status(200).json({
+                success: true,
+                message: 'You are not eligible to review this product',
+                data: null,
+            });
         }
 
         const existingReview = await prisma.review.findFirst({
             where: { userId, softwareId },
         });
         if (existingReview) {
-            return next(
-                new ErrorHandler('You have already reviewed this product', 400)
-            );
+            return res.status(200).json({
+                success: true,
+                message: 'You have already reviewed this product',
+                data: null,
+            });
         }
 
         const review = await prisma.$transaction(async (tx) => {
