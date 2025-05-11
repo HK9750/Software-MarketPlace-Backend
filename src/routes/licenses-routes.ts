@@ -1,29 +1,37 @@
 import express from 'express';
 import {
-    GetUserLicenses,
-    GetLicenseById,
-    ValidateLicense,
-    ActivateLicense,
-    DeactivateLicense,
-    RenewLicense,
-    CheckExpiredLicenses,
+    getUserLicenses,
+    getLicenseById,
+    getLicensesBySubscription,
+    getActiveLicenses,
+    getExpiredLicenses,
 } from '../controllers/licenses-controller';
-import {
-    authenticateUser,
-    authorizeAdmin,
-} from '../middlewares/auth-middleware';
+import { authenticateUser } from '../middlewares/auth-middleware';
 
 const router = express.Router();
 
-// User license routes (requires authentication)
-router.get('/', authenticateUser, GetUserLicenses);
-router.get('/:licenseId', authenticateUser, GetLicenseById);
-router.post('/validate', authenticateUser, ValidateLicense);
-router.post('/activate', authenticateUser, ActivateLicense);
-router.patch('/:licenseId/deactivate', authenticateUser, DeactivateLicense);
-router.patch('/:licenseId/renew', authenticateUser, RenewLicense);
+/**
+ * License routes
+ * Base path: /api/licenses
+ */
 
-// Admin-only route for maintenance
-router.post('/check-expired', authorizeAdmin, CheckExpiredLicenses);
+// Get all licenses for the authenticated user
+router.get('/', authenticateUser, getUserLicenses);
+
+// Get all active licenses for the authenticated user
+router.get('/active', authenticateUser, getActiveLicenses);
+
+// Get all expired licenses for the authenticated user
+router.get('/expired', authenticateUser, getExpiredLicenses);
+
+// Get all licenses for a specific software subscription
+router.get(
+    '/subscription/:subscriptionId',
+    authenticateUser,
+    getLicensesBySubscription
+);
+
+// Get a specific license by ID
+router.get('/:licenseId', authenticateUser, getLicenseById);
 
 export default router;
