@@ -107,6 +107,7 @@ export const getAllProductsBySeller = AsyncErrorHandler(
             select: {
                 id: true,
                 name: true,
+                status: true,
                 description: true,
                 filePath: true,
                 seller: {
@@ -173,6 +174,7 @@ export const getProduct = AsyncErrorHandler(
             where: { id: req.params.id },
             select: {
                 id: true,
+                status: true,
                 name: true,
                 description: true,
                 features: true,

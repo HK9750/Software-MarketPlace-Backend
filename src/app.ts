@@ -7,7 +7,6 @@ import bodyParser from 'body-parser';
 import cookieParser from 'cookie-parser';
 import fileUpload from 'express-fileupload';
 import config from './config';
-import rateLimit from 'express-rate-limit';
 import errorMiddleware from './middlewares/error-middleware';
 
 // Importing Routes
@@ -31,13 +30,6 @@ dotenv.config();
 
 const app = express();
 
-const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    limit: 100,
-    standardHeaders: 'draft-7',
-    legacyHeaders: false,
-});
-
 const options = {
     origin: config.CLIENT_URL,
     credentials: true,
@@ -49,7 +41,6 @@ app.use(cookieParser());
 app.use(fileUpload());
 app.use(cors(options));
 app.use(express.json({ limit: '50mb' }));
-app.use(limiter);
 
 app.use('/api/v1/auth', AuthRoutes);
 app.use('/api/v1/profile', ProfileRoutes);
