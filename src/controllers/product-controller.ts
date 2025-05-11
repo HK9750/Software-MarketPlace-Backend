@@ -256,7 +256,8 @@ export const getProduct = AsyncErrorHandler(
 
         // Transform subscriptions to include only price and name
         const formattedSubscriptions = product.subscriptions.map((sub) => ({
-            id: sub.subscriptionPlan.id,
+            id: sub.id,
+            subscriptionId: sub.subscriptionPlan.id,
             basePrice: sub.basePrice,
             price: sub.price,
             name: sub.subscriptionPlan.name,
