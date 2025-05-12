@@ -16,6 +16,8 @@ export const getAllProducts = AsyncErrorHandler(
     async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
         const { status, category, name } = req.query;
 
+        console.log(status);
+
         const products = await prisma.software.findMany({
             where: {
                 name: name != '' ? { contains: name as string } : undefined,
@@ -25,6 +27,7 @@ export const getAllProducts = AsyncErrorHandler(
             select: {
                 id: true,
                 name: true,
+                status: true,
                 description: true,
                 filePath: true,
                 seller: {
@@ -348,6 +351,7 @@ export const createProduct = AsyncErrorHandler(
                 data: {
                     name,
                     description,
+                    status: 0,
                     features,
                     requirements,
                     filePath,
