@@ -745,7 +745,7 @@ export const getProductsForHomepage = AsyncErrorHandler(
                 if (!trendingSet.has(sw.id)) {
                     trendingSet.add(sw.id);
                     acc.push({
-                        id: Number(sw.id),
+                        id: String(sw.id),
                         name: sw.name,
                         description: sw.description,
                         filePath: sw.filePath,
@@ -758,7 +758,7 @@ export const getProductsForHomepage = AsyncErrorHandler(
                 return acc;
             },
             [] as {
-                id: number;
+                id: string;
                 name: string;
                 description: string;
                 filePath: string;
